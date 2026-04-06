@@ -1,21 +1,238 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap');
+
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-body {
-  font-family: sans-serif;
-  background: #0f0f0f;
-  color: #f0f0f0;
-  padding: 2rem;
+:root {
+  --bg: #111008;
+  --surface: #1a1a12;
+  --border: #2e2d20;
+  --gold: #c9a84c;
+  --gold-muted: #8a6f2e;
+  --text: #e8e4d4;
+  --text-muted: #7a7668;
+  --danger: #8b3a3a;
 }
 
-h1 {
-  font-size: 2rem;
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 2rem;
+}
+
+/* Header */
+.header {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 2rem;
+  margin-bottom: 3rem;
+}
+
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.8rem;
+  font-weight: 600;
+  color: var(--gold);
+  letter-spacing: 0.02em;
+}
+
+.header p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-top: 0.4rem;
+}
+
+.header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.2rem;
+}
+
+.welcome {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+/* Buttons */
+button {
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: var(--gold);
+  color: var(--bg);
+  padding: 0.6rem 1.4rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.btn-primary:hover {
+  background: #e0bc6a;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-muted);
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+  border: 1px solid var(--border);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.btn-ghost:hover {
+  border-color: var(--gold-muted);
+  color: var(--text);
+}
+
+/* Login screen */
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  text-align: center;
+  gap: 1rem;
+}
+
+.login-screen h1 {
+  font-family: 'Playfair Display', serif;
+  font-size: 3.5rem;
+  color: var(--gold);
+}
+
+.login-screen p {
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+/* Form */
+.form-section {
+  margin-bottom: 3rem;
+}
+
+.form-section h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.asset-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.8rem;
+}
+
+.asset-form input {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.asset-form input:focus {
+  border-color: var(--gold-muted);
+}
+
+.asset-form input::placeholder {
+  color: var(--text-muted);
+}
+
+.asset-form input.full-width {
+  grid-column: 1 / -1;
+}
+
+.asset-form .btn-primary {
+  grid-column: 1 / -1;
+  padding: 0.75rem;
+}
+
+/* Asset list */
+.asset-list h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  font-weight: 400;
+  margin-bottom: 1.2rem;
+  letter-spacing: 0.04em;
+}
+
+.asset-card {
+  border: 1px solid var(--border);
+  padding: 1.2rem 1.4rem;
+  margin-bottom: 0.8rem;
+  background: var(--surface);
+  transition: border-color 0.2s;
+}
+
+.asset-card:hover {
+  border-color: var(--gold-muted);
+}
+
+.asset-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.4rem;
+}
+
+.asset-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.asset-value {
+  font-size: 0.9rem;
+  color: var(--gold);
+  font-weight: 500;
+}
+
+.asset-category {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   margin-bottom: 0.5rem;
 }
 
-p {
-  color: #aaa;
+.asset-description {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.empty-state {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border);
 }

@@ -9,6 +9,12 @@ function App() {
   const [assets, setAssets] = useState([])
   const [form, setForm] = useState({ name: '', category: '', description: '', value: '' })
 
+  const loadAssets = async (uid) => {
+    const q = query(collection(db, 'assets'), where('uid', '==', uid))
+    const snapshot = await getDocs(q)
+    setAssets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+  }
+
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       if (currentUser) {
@@ -18,12 +24,6 @@ function App() {
     })
     return () => unsubscribe()
   }, [])
-  
-  const loadAssets = async (uid) => {
-    const q = query(collection(db, 'assets'), where('uid', '==', uid))
-    const snapshot = await getDocs(q)
-    setAssets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
-  }
 
   const handleLogin = async () => {
     const result = await signInWithPopup(auth, googleProvider)
@@ -51,40 +51,53 @@ function App() {
 
   if (!user) {
     return (
-      <div>
+      <div className="login-screen">
         <h1>Provenance</h1>
         <p>Track and pass down what matters.</p>
-        <button onClick={handleLogin}>Sign in with Google</button>
+        <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
       </div>
     )
   }
 
   return (
-    <div>
-      <h1>Provenance</h1>
-      <p>Welcome, {user.displayName}</p>
-      <button onClick={handleLogout}>Sign Out</button>
+    <div className="app">
+      <div className="header">
+        <h1>Provenance</h1>
+        <p>Estate Asset Registry</p>
+        <div className="header-meta">
+          <span className="welcome">{user.displayName}</span>
+          <button className="btn-ghost" onClick={handleLogout}>Sign Out</button>
+        </div>
+      </div>
 
-      <h2>Add an Asset</h2>
-      <form onSubmit={handleSubmit}>
-        <input name="name" placeholder="Item name" value={form.name} onChange={handleChange} required />
-        <input name="category" placeholder="Category" value={form.category} onChange={handleChange} />
-        <input name="description" placeholder="Description" value={form.description} onChange={handleChange} />
-        <input name="value" placeholder="Estimated value" value={form.value} onChange={handleChange} />
-        <button type="submit">Add Asset</button>
-      </form>
+      <div className="form-section">
+        <h2>Add an Asset</h2>
+        <form className="asset-form" onSubmit={handleSubmit}>
+          <input name="name" placeholder="Item name" value={form.name} onChange={handleChange} required className="full-width" />
+          <input name="category" placeholder="Category" value={form.category} onChange={handleChange} />
+          <input name="value" placeholder="Estimated value" value={form.value} onChange={handleChange} />
+          <input name="description" placeholder="Description" value={form.description} onChange={handleChange} className="full-width" />
+          <button type="submit" className="btn-primary">Add to Registry</button>
+        </form>
+      </div>
 
-      <h2>Your Assets</h2>
-      {assets.length === 0 ? (
-        <p>No assets yet.</p>
-      ) : (
-        assets.map((asset) => (
-          <div key={asset.id}>
-            <strong>{asset.name}</strong> — {asset.category} — ${asset.value}
-            <p>{asset.description}</p>
-          </div>
-        ))
-      )}
+      <div className="asset-list">
+        <h2>Registry</h2>
+        {assets.length === 0 ? (
+          <p className="empty-state">No assets recorded yet.</p>
+        ) : (
+          assets.map((asset) => (
+            <div className="asset-card" key={asset.id}>
+              <div className="asset-card-header">
+                <span className="asset-name">{asset.name}</span>
+                <span className="asset-value">${asset.value}</span>
+              </div>
+              <div className="asset-category">{asset.category}</div>
+              <div className="asset-description">{asset.description}</div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }
