@@ -2,12 +2,14 @@ import { useState, useEffect } from 'react'
 import { auth, googleProvider, db } from './firebase'
 import { signInWithPopup, signOut } from 'firebase/auth'
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore'
+import AssetDetail from './AssetDetail'
 import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
   const [assets, setAssets] = useState([])
   const [form, setForm] = useState({ name: '', category: '', description: '', value: '' })
+  const [selectedAsset, setSelectedAsset] = useState(null)
 
   const loadAssets = async (uid) => {
     const q = query(collection(db, 'assets'), where('uid', '==', uid))
@@ -35,6 +37,7 @@ function App() {
     await signOut(auth)
     setUser(null)
     setAssets([])
+    setSelectedAsset(null)
   }
 
   const handleChange = (e) => {
@@ -58,6 +61,19 @@ function App() {
         <p className="login-tagline">Track and pass down what matters.</p>
         <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
       </div>
+    )
+  }
+
+  if (selectedAsset) {
+    return (
+      <AssetDetail
+        asset={selectedAsset}
+        onBack={() => setSelectedAsset(null)}
+        onUpdate={(updated) => {
+          setSelectedAsset(updated)
+          setAssets(assets.map(a => a.id === updated.id ? updated : a))
+        }}
+      />
     )
   }
 
@@ -94,7 +110,7 @@ function App() {
           <p className="empty-state">No assets recorded yet.</p>
         ) : (
           assets.map((asset) => (
-            <div className="asset-card" key={asset.id}>
+            <div className="asset-card" key={asset.id} onClick={() => setSelectedAsset(asset)}>
               <div className="asset-card-left">
                 <div className="asset-name">{asset.name}</div>
                 <div className="asset-category">{asset.category}</div>
