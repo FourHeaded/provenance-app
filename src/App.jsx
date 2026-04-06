@@ -52,8 +52,10 @@ function App() {
   if (!user) {
     return (
       <div className="login-screen">
+        <div className="login-ornament"></div>
         <h1>Provenance</h1>
-        <p>Track and pass down what matters.</p>
+        <div className="login-ornament"></div>
+        <p className="login-tagline">Track and pass down what matters.</p>
         <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
       </div>
     )
@@ -62,16 +64,20 @@ function App() {
   return (
     <div className="app">
       <div className="header">
-        <h1>Provenance</h1>
-        <p>Estate Asset Registry</p>
+        <div className="header-top">
+          <div className="header-brand">
+            <h1>Provenance</h1>
+            <p>Estate Asset Registry</p>
+          </div>
+          <button className="btn-ghost" onClick={handleLogout}>Sign Out</button>
+        </div>
         <div className="header-meta">
           <span className="welcome">{user.displayName}</span>
-          <button className="btn-ghost" onClick={handleLogout}>Sign Out</button>
         </div>
       </div>
 
       <div className="form-section">
-        <h2>Add an Asset</h2>
+        <h2 className="section-label">Add an Asset</h2>
         <form className="asset-form" onSubmit={handleSubmit}>
           <input name="name" placeholder="Item name" value={form.name} onChange={handleChange} required className="full-width" />
           <input name="category" placeholder="Category" value={form.category} onChange={handleChange} />
@@ -82,18 +88,22 @@ function App() {
       </div>
 
       <div className="asset-list">
-        <h2>Registry</h2>
+        <h2 className="section-label">Registry</h2>
+        <hr className="divider" />
         {assets.length === 0 ? (
           <p className="empty-state">No assets recorded yet.</p>
         ) : (
           assets.map((asset) => (
             <div className="asset-card" key={asset.id}>
-              <div className="asset-card-header">
-                <span className="asset-name">{asset.name}</span>
-                <span className="asset-value">${asset.value}</span>
+              <div className="asset-card-left">
+                <div className="asset-name">{asset.name}</div>
+                <div className="asset-category">{asset.category}</div>
+                {asset.description && <div className="asset-description">{asset.description}</div>}
               </div>
-              <div className="asset-category">{asset.category}</div>
-              <div className="asset-description">{asset.description}</div>
+              <div className="asset-card-right">
+                <span className="asset-value">${asset.value}</span>
+                <span className="asset-chevron">›</span>
+              </div>
             </div>
           ))
         )}
