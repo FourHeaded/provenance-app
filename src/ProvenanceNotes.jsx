@@ -27,7 +27,7 @@ const SECTIONS = [
   }
 ]
 
-function NoteSection({ sectionKey, label, placeholder, value, category, assetId, onUpdate, isPremium }) {
+function NoteSection({ sectionKey, label, placeholder, value, category, assetId, assetName, onUpdate, isPremium }) {
   const [text, setText] = useState(value || '')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -40,45 +40,78 @@ function NoteSection({ sectionKey, label, placeholder, value, category, assetId,
     setText(value || '')
   }, [value])
 
+  const saveToFirestore = async (newText) => {
+    setSaving(true)
+    const ref = doc(db, 'assets', assetId)
+    await updateDoc(ref, {
+      [`notes.${sectionKey}`]: newText,
+      updatedAt: new Date()
+    })
+    onUpdate(sectionKey, newText)
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
   const handleChange = (e) => {
     const newText = e.target.value
     setText(newText)
     setSaved(false)
-
     if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(async () => {
-      setSaving(true)
-      const ref = doc(db, 'assets', assetId)
-      await updateDoc(ref, {
-        [`notes.${sectionKey}`]: newText,
-        updatedAt: new Date()
-      })
-      onUpdate(sectionKey, newText)
-      setSaving(false)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    }, 1500)
+    saveTimer.current = setTimeout(() => saveToFirestore(newText), 1500)
   }
 
-  const handleChipClick = (prompt) => {
-    const newText = text
-      ? `${text.trimEnd()}\n\n${prompt} `
-      : `${prompt} `
-    setText(newText)
-    setSaved(false)
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(async () => {
-      setSaving(true)
-      const ref = doc(db, 'assets', assetId)
-      await updateDoc(ref, {
-        [`notes.${sectionKey}`]: newText,
-        updatedAt: new Date()
+  const callAI = async (systemPrompt) => {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: systemPrompt }]
       })
-      onUpdate(sectionKey, newText)
-      setSaving(false)
-      setSaved(true)
-      setTimeout(() => setSaved(false), 2000)
-    }, 1500)
+    })
+    const data = await response.json()
+    return data.content[0].text.trim()
+  }
+
+  const handleChipClick = async (prompt) => {
+    setLoadingAI(true)
+    try {
+        const aiText = await callAI(`You are helping someone document a cherished personal asset for their estate registry.
+
+            Asset details:
+            - Name: ${assetName}
+            - Category: ${category}
+            - Section: ${label}
+            - Prompt: ${prompt}
+            
+            Write an incomplete sentence starter (10-15 words maximum) that begins with the asset's name or a specific detail about it, then trails off naturally with "..." so the owner can finish it in their own words.
+            
+            Examples of the style:
+            - "This 1962 Rolex Submariner came into my life when..."
+            - "My father's Gibson Les Paul has traveled with me through..."
+            - "I acquired this piece at a small gallery in..."
+            
+            Respond with only the sentence starter including the trailing "...", nothing else.`)
+
+      const newText = text
+        ? `${text.trimEnd()}\n\n${aiText} `
+        : `${aiText} `
+
+      setText(newText)
+      if (saveTimer.current) clearTimeout(saveTimer.current)
+      saveTimer.current = setTimeout(() => saveToFirestore(newText), 1500)
+
+    } catch (err) {
+      console.error('Chip AI error:', err)
+    }
+    setLoadingAI(false)
   }
 
   const handleAIAssist = async () => {
@@ -88,18 +121,8 @@ function NoteSection({ sectionKey, label, placeholder, value, category, assetId,
     }
 
     setLoadingAI(true)
-
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [
-            {
-              role: 'user',
-              content: `You are helping someone document the story of a cherished personal asset for their estate registry.
+      const aiText = await callAI(`You are helping someone document the story of a cherished personal asset for their estate registry.
 
 Asset details:
 - Name: ${assetId}
@@ -116,32 +139,18 @@ Guidelines:
 - Do not use placeholders like [name] — write flowing prose that prompts memory
 - Keep it under 100 words
 
-Respond with only the paragraph text, nothing else.`
-            }
-          ]
-        })
-      })
-
-      const data = await response.json()
-      const aiText = data.content[0].text
+Respond with only the paragraph text, nothing else.`)
 
       const newText = text
         ? `${text.trimEnd()}\n\n${aiText}`
         : aiText
 
       setText(newText)
-
-      const ref = doc(db, 'assets', assetId)
-      await updateDoc(ref, {
-        [`notes.${sectionKey}`]: newText,
-        updatedAt: new Date()
-      })
-      onUpdate(sectionKey, newText)
+      await saveToFirestore(newText)
 
     } catch (err) {
       console.error('AI assist error:', err)
     }
-
     setLoadingAI(false)
   }
 
@@ -168,6 +177,7 @@ Respond with only the paragraph text, nothing else.`
             key={i}
             className="prompt-chip"
             onClick={() => handleChipClick(prompt)}
+            disabled={loadingAI}
           >
             {prompt}
           </button>
@@ -209,16 +219,17 @@ function ProvenanceNotes({ asset, onUpdate, isPremium = false }) {
     <div className="provenance-notes">
       {SECTIONS.map(section => (
         <NoteSection
-          key={section.key}
-          sectionKey={section.key}
-          label={section.label}
-          placeholder={section.placeholder}
-          value={asset.notes?.[section.key] || ''}
-          category={asset.category}
-          assetId={asset.id}
-          onUpdate={handleSectionUpdate}
-          isPremium={isPremium}
-        />
+        key={section.key}
+        sectionKey={section.key}
+        label={section.label}
+        placeholder={section.placeholder}
+        value={asset.notes?.[section.key] || ''}
+        category={asset.category}
+        assetId={asset.id}
+        assetName={asset.name}
+        onUpdate={handleSectionUpdate}
+        isPremium={isPremium}
+      />
       ))}
     </div>
   )
