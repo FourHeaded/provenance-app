@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { auth, googleProvider } from './firebase'
+import { useState, useEffect } from 'react'
+import { auth, googleProvider, db } from './firebase'
 import { signInWithPopup, signOut } from 'firebase/auth'
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore'
 import './App.css'
 
 function App() {
@@ -8,23 +9,43 @@ function App() {
   const [assets, setAssets] = useState([])
   const [form, setForm] = useState({ name: '', category: '', description: '', value: '' })
 
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged((currentUser) => {
+      if (currentUser) {
+        setUser(currentUser)
+        loadAssets(currentUser.uid)
+      }
+    })
+    return () => unsubscribe()
+  }, [])
+  
+  const loadAssets = async (uid) => {
+    const q = query(collection(db, 'assets'), where('uid', '==', uid))
+    const snapshot = await getDocs(q)
+    setAssets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+  }
+
   const handleLogin = async () => {
     const result = await signInWithPopup(auth, googleProvider)
     setUser(result.user)
+    loadAssets(result.user.uid)
   }
 
   const handleLogout = async () => {
     await signOut(auth)
     setUser(null)
+    setAssets([])
   }
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    setAssets([...assets, form])
+    const newAsset = { ...form, uid: user.uid }
+    const docRef = await addDoc(collection(db, 'assets'), newAsset)
+    setAssets([...assets, { id: docRef.id, ...newAsset }])
     setForm({ name: '', category: '', description: '', value: '' })
   }
 
@@ -57,8 +78,8 @@ function App() {
       {assets.length === 0 ? (
         <p>No assets yet.</p>
       ) : (
-        assets.map((asset, i) => (
-          <div key={i}>
+        assets.map((asset) => (
+          <div key={asset.id}>
             <strong>{asset.name}</strong> — {asset.category} — ${asset.value}
             <p>{asset.description}</p>
           </div>
