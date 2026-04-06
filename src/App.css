@@ -441,3 +441,157 @@ button {
 .thumbnail-upload-label:hover {
   color: var(--accent-gold);
 }
+
+/* ── Edit Mode ── */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 32px;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-small {
+  height: 36px;
+  width: auto;
+  padding: 0 20px;
+  font-size: 11px;
+}
+
+.edit-input {
+  font-family: 'Inter', sans-serif;
+  background: var(--surface-2);
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  border-radius: 8px;
+  outline: none;
+  transition: box-shadow 0.15s;
+  width: 100%;
+}
+
+.edit-input:focus {
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+}
+
+.edit-input-large {
+  font-family: 'Playfair Display', serif;
+  font-size: 32px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+
+.edit-input-small {
+  font-size: 11px;
+  padding: 4px 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  width: auto;
+}
+
+.edit-input-value {
+  font-size: 20px;
+  padding: 6px 12px;
+  color: var(--accent-gold);
+  width: auto;
+}
+
+.edit-textarea {
+  font-family: 'Inter', sans-serif;
+  font-size: 15px;
+  font-weight: 300;
+  background: var(--surface-2);
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  border-radius: 8px;
+  outline: none;
+  width: 100%;
+  min-height: 100px;
+  padding: 12px;
+  line-height: 1.7;
+  resize: vertical;
+  transition: box-shadow 0.15s;
+}
+
+.edit-textarea:focus {
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+}
+
+.detail-hero-text {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Delete Zone ── */
+.detail-delete-zone {
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+  text-align: center;
+}
+
+.btn-delete-trigger {
+  background: transparent;
+  color: var(--text-faint);
+  font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.btn-delete-trigger:hover {
+  color: #8b3a3a;
+}
+
+.delete-confirm {
+  background: var(--surface-1);
+  border: 1px solid #3a2020;
+  border-radius: 12px;
+  padding: 24px;
+  text-align: left;
+}
+
+.delete-confirm p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.delete-confirm strong {
+  color: var(--text-primary);
+}
+
+.delete-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.btn-danger {
+  height: 36px;
+  background: #6b2a2a;
+  color: #f0d0d0;
+  padding: 0 16px;
+  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  border: 1px solid #8b3a3a;
+  border-radius: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-danger:hover {
+  background: #8b3a3a;
+}

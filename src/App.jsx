@@ -73,6 +73,10 @@ function App() {
           setSelectedAsset(updated)
           setAssets(assets.map(a => a.id === updated.id ? updated : a))
         }}
+        onDelete={(id) => {
+          setAssets(assets.filter(a => a.id !== id))
+          setSelectedAsset(null)
+        }}
       />
     )
   }

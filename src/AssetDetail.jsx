@@ -1,19 +1,54 @@
 import { useState } from 'react'
 import { db } from './firebase'
-import { doc, updateDoc } from 'firebase/firestore'
+import { doc, updateDoc, deleteDoc } from 'firebase/firestore'
 import './App.css'
 
 const DEFAULT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%231A1A1A'/%3E%3Crect x='60' y='60' width='80' height='60' rx='4' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Ccircle cx='85' cy='82' r='8' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Cpolyline points='60,120 85,95 105,112 125,88 140,120' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3C/svg%3E"
 
-function AssetDetail({ asset, onBack, onUpdate }) {
+function AssetDetail({ asset, onBack, onUpdate, onDelete }) {
+  const [editing, setEditing] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [form, setForm] = useState({
+    name: asset.name,
+    category: asset.category,
+    description: asset.description,
+    value: asset.value
+  })
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleSave = async () => {
+    setSaving(true)
+    const ref = doc(db, 'assets', asset.id)
+    await updateDoc(ref, form)
+    onUpdate({ ...asset, ...form })
+    setEditing(false)
+    setSaving(false)
+  }
+
+  const handleCancel = () => {
+    setForm({
+      name: asset.name,
+      category: asset.category,
+      description: asset.description,
+      value: asset.value
+    })
+    setEditing(false)
+  }
+
+  const handleDelete = async () => {
+    await deleteDoc(doc(db, 'assets', asset.id))
+    onDelete(asset.id)
+  }
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-
     setUploading(true)
-
     const reader = new FileReader()
     reader.onloadend = async () => {
       const base64 = reader.result
@@ -29,14 +64,56 @@ function AssetDetail({ asset, onBack, onUpdate }) {
     <div className="app">
       <div className="detail-header">
         <button className="btn-back" onClick={onBack}>← Registry</button>
+        <div className="detail-header-actions">
+          {editing ? (
+            <>
+              <button className="btn-ghost" onClick={handleCancel}>Cancel</button>
+              <button className="btn-primary btn-small" onClick={handleSave} disabled={saving}>
+                {saving ? 'Saving...' : 'Save'}
+              </button>
+            </>
+          ) : (
+            <button className="btn-ghost" onClick={() => setEditing(true)}>Edit</button>
+          )}
+        </div>
       </div>
 
       <div className="detail-hero">
         <div className="detail-hero-content">
-          <div>
-            <div className="detail-category">{asset.category}</div>
-            <h1 className="detail-name">{asset.name}</h1>
-            <div className="detail-value">${asset.value}</div>
+          <div className="detail-hero-text">
+            <div className="detail-category">
+              {editing ? (
+                <input
+                  name="category"
+                  value={form.category}
+                  onChange={handleChange}
+                  className="edit-input edit-input-small"
+                  placeholder="Category"
+                />
+              ) : asset.category}
+            </div>
+            {editing ? (
+              <input
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                className="edit-input edit-input-large"
+                placeholder="Item name"
+              />
+            ) : (
+              <h1 className="detail-name">{asset.name}</h1>
+            )}
+            {editing ? (
+              <input
+                name="value"
+                value={form.value}
+                onChange={handleChange}
+                className="edit-input edit-input-value"
+                placeholder="Estimated value"
+              />
+            ) : (
+              <div className="detail-value">${asset.value}</div>
+            )}
           </div>
           <div className="detail-thumbnail-wrap">
             <img
@@ -60,9 +137,17 @@ function AssetDetail({ asset, onBack, onUpdate }) {
       <div className="detail-section">
         <h2 className="section-label">Description</h2>
         <div className="detail-card">
-          <p className="detail-text">
-            {asset.description || 'No description recorded.'}
-          </p>
+          {editing ? (
+            <textarea
+              name="description"
+              value={form.description}
+              onChange={handleChange}
+              className="edit-textarea"
+              placeholder="Add a description"
+            />
+          ) : (
+            <p className="detail-text">{asset.description || 'No description recorded.'}</p>
+          )}
         </div>
       </div>
 
@@ -78,6 +163,22 @@ function AssetDetail({ asset, onBack, onUpdate }) {
         <div className="detail-card detail-empty">
           <p className="detail-placeholder">Receipts, appraisals, and photos coming soon.</p>
         </div>
+      </div>
+
+      <div className="detail-delete-zone">
+        {confirmDelete ? (
+          <div className="delete-confirm">
+            <p>Remove <strong>{asset.name}</strong> from the registry? This cannot be undone.</p>
+            <div className="delete-confirm-actions">
+              <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
+              <button className="btn-danger" onClick={handleDelete}>Remove Asset</button>
+            </div>
+          </div>
+        ) : (
+          <button className="btn-delete-trigger" onClick={() => setConfirmDelete(true)}>
+            Remove from Registry
+          </button>
+        )}
       </div>
     </div>
   )
