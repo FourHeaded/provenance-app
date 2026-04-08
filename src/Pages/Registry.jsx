@@ -2,11 +2,9 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
-import AssetDetail from '../AssetDetail'
 
 function Registry({ user }) {
   const [assets, setAssets] = useState([])
-  const [selectedAsset, setSelectedAsset] = useState(null)
   const [activeFilters, setActiveFilters] = useState([])
   const navigate = useNavigate()
 
@@ -33,23 +31,6 @@ function Registry({ user }) {
   const filteredAssets = activeFilters.length === 0
     ? assets
     : assets.filter(a => activeFilters.includes(a.category))
-
-  if (selectedAsset) {
-    return (
-      <AssetDetail
-        asset={selectedAsset}
-        onBack={() => setSelectedAsset(null)}
-        onUpdate={(updated) => {
-          setSelectedAsset(updated)
-          setAssets(assets.map(a => a.id === updated.id ? updated : a))
-        }}
-        onDelete={(id) => {
-          setAssets(assets.filter(a => a.id !== id))
-          setSelectedAsset(null)
-        }}
-      />
-    )
-  }
 
   return (
     <div className="page">
@@ -87,7 +68,11 @@ function Registry({ user }) {
           </p>
         ) : (
           filteredAssets.map((asset) => (
-            <div className="asset-card" key={asset.id} onClick={() => setSelectedAsset(asset)}>
+            <div
+              className="asset-card"
+              key={asset.id}
+              onClick={() => navigate(`/asset/${asset.id}`, { state: { asset } })}
+            >
               <div className="asset-card-left">
                 <div className="asset-name">{asset.name}</div>
                 <div className="asset-category">{asset.category}</div>

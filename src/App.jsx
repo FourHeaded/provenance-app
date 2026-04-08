@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import AssetDetailPage from './pages/AssetDetailPage'
 import { Routes, Route } from 'react-router-dom'
 import { auth, googleProvider } from './firebase'
 import { signInWithPopup } from 'firebase/auth'
@@ -52,6 +53,7 @@ function App() {
           <Route path="/documents" element={<Documents user={user} />} />
           <Route path="/profile" element={<Profile user={user} />} />
           <Route path="/archive" element={<Archive user={user} />} />
+          <Route path="/asset/:id" element={<AssetDetailPage />} />
           <Route path="/reports" element={<Reports user={user} />} />
         </Routes>
       </div>
