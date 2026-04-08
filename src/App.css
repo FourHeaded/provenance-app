@@ -736,3 +736,32 @@ button {
 .btn-danger:hover {
   background: #8b3a3a;
 }
+
+/* ── App Shell ── */
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-content {
+  flex: 1;
+  padding-bottom: 80px;
+}
+
+.page {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 48px 32px 80px;
+}
+
+.placeholder-text {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  color: var(--text-faint);
+  font-size: 15px;
+  padding: 32px 0;
+  text-align: center;
+  border: 1px dashed var(--border-soft);
+  border-radius: 12px;
+}
