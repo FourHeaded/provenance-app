@@ -217,9 +217,102 @@ button {
   grid-column: 1 / -1;
 }
 
+.asset-form .full-width {
+  grid-column: 1 / -1;
+}
+
 .asset-form .btn-primary {
   grid-column: 1 / -1;
   margin-top: 8px;
+}
+
+/* ── Category Selector ── */
+.category-selector {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.category-chips {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  width: 100%;
+}
+
+.category-chip {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.04em;
+  text-align: center;
+  width: 100%;
+}
+
+.category-chip:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.category-chip.active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #0D0D0D;
+  font-weight: 500;
+}
+
+.category-chip-add {
+  width: 100%;
+  border-style: dashed;
+  color: var(--text-faint);
+  border-radius: 20px;
+  padding: 5px 14px;
+}
+
+.category-chip-add:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.custom-category-input {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.custom-category-input input {
+  font-family: 'Inter', sans-serif;
+  height: 36px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-focus);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font-size: 13px;
+  outline: none;
+  border-radius: 8px;
+  flex: 1;
+  transition: box-shadow 0.15s;
+}
+
+.custom-category-input input:focus {
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+}
+
+.selected-category {
+  font-size: 12px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+.selected-category strong {
+  color: var(--accent-gold);
 }
 
 /* ── Registry ── */
@@ -237,6 +330,58 @@ button {
   margin: 0 0 16px;
 }
 
+/* ── Filter Bar ── */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.filter-chip {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--text-secondary);
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 4px 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  letter-spacing: 0.04em;
+}
+
+.filter-chip:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.filter-chip.active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  color: #0D0D0D;
+  font-weight: 500;
+}
+
+.filter-clear {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--text-faint);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  transition: color 0.15s;
+}
+
+.filter-clear:hover {
+  color: var(--text-secondary);
+}
+
+/* ── Asset Cards ── */
 .asset-card {
   display: flex;
   align-items: center;
@@ -248,7 +393,7 @@ button {
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
   transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
-  cursor: default;
+  cursor: pointer;
 }
 
 .asset-card:last-child {
@@ -322,7 +467,16 @@ button {
 
 /* ── Asset Detail ── */
 .detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 32px;
+}
+
+.detail-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .btn-back {
@@ -341,10 +495,29 @@ button {
   color: var(--accent-gold);
 }
 
+.btn-small {
+  height: 36px;
+  width: auto;
+  padding: 0 20px;
+  font-size: 11px;
+}
+
 .detail-hero {
   margin-bottom: 40px;
   padding-bottom: 32px;
   border-bottom: 1px solid var(--border-soft);
+}
+
+.detail-hero-content {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.detail-hero-text {
+  flex: 1;
+  min-width: 0;
 }
 
 .detail-category {
@@ -405,13 +578,6 @@ button {
 }
 
 /* ── Thumbnail ── */
-.detail-hero-content {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-}
-
 .detail-thumbnail-wrap {
   display: flex;
   flex-direction: column;
@@ -443,26 +609,6 @@ button {
 }
 
 /* ── Edit Mode ── */
-.detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 32px;
-}
-
-.detail-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-small {
-  height: 36px;
-  width: auto;
-  padding: 0 20px;
-  font-size: 11px;
-}
-
 .edit-input {
   font-family: 'Inter', sans-serif;
   background: var(--surface-2);
@@ -520,11 +666,6 @@ button {
 
 .edit-textarea:focus {
   box-shadow: 0 0 0 3px var(--accent-gold-glow);
-}
-
-.detail-hero-text {
-  flex: 1;
-  min-width: 0;
 }
 
 /* ── Delete Zone ── */
