@@ -26,9 +26,9 @@ function App() {
       setAuthReady(true)
       // Post-login redirect for shared links
       if (currentUser) {
-        const redirect = sessionStorage.getItem('postLoginRedirect')
+        const redirect = sessionStorage.getItem('pendingRedirect')
         if (redirect) {
-          sessionStorage.removeItem('postLoginRedirect')
+          sessionStorage.removeItem('pendingRedirect')
           navigate(redirect, { replace: true })
         }
       }
@@ -37,24 +37,25 @@ function App() {
   }, [])
 
   const handleLogin = async () => {
+    // Capture the intended path before the popup opens
+    const path = location.pathname
+    if (path.startsWith('/shared/')) {
+      sessionStorage.setItem('pendingRedirect', path)
+    }
     await signInWithPopup(auth, googleProvider)
   }
 
   if (!authReady) return null
 
   if (!user) {
-    // Save the intended path so we can redirect after login
-    const path = location.pathname
-    if (path.startsWith('/shared/')) {
-      sessionStorage.setItem('postLoginRedirect', path)
-    }
+    const isSharedPath = location.pathname.startsWith('/shared/')
     return (
       <div className="login-screen">
         <div className="login-ornament"></div>
         <h1>Provenance</h1>
         <div className="login-ornament"></div>
         <p className="login-tagline">Track and pass down what matters.</p>
-        {path.startsWith('/shared/') && (
+        {isSharedPath && (
           <p className="login-shared-hint">Sign in to view the shared registry.</p>
         )}
         <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>

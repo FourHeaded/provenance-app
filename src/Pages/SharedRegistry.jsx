@@ -18,19 +18,29 @@ function SharedRegistry({ user }) {
 
   useEffect(() => {
     const load = async () => {
-      // Check for a valid (non-declined) invite for this user's email
-      const inviteSnap = await getDocs(query(
-        collection(db, 'invites'),
-        where('registryOwnerUid', '==', ownerUid),
-        where('invitedEmail', '==', user.email),
-      ))
-      const validInvite = inviteSnap.docs.find(d => d.data().status !== 'declined')
-      if (!validInvite) {
-        setLoading(false)
-        return
+      // Owner can always preview their own shared registry
+      if (user.uid === ownerUid) {
+        setHasAccess(true)
+        setOwnerName(user.displayName || '')
+      } else {
+        // Query by owner only (avoids composite index requirement),
+        // then filter by the user's verified Google email client-side
+        const userEmail = user.email.toLowerCase()
+        const inviteSnap = await getDocs(query(
+          collection(db, 'invites'),
+          where('registryOwnerUid', '==', ownerUid),
+        ))
+        const validInvite = inviteSnap.docs
+          .map(d => d.data())
+          .find(d => d.invitedEmail === userEmail && d.status !== 'declined')
+
+        if (!validInvite) {
+          setLoading(false)
+          return
+        }
+        setHasAccess(true)
+        setOwnerName(validInvite.ownerName || '')
       }
-      setHasAccess(true)
-      setOwnerName(validInvite.data().ownerName || '')
 
       // Load owner's active assets
       const assetSnap = await getDocs(query(
