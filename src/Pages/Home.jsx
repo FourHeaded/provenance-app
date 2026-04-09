@@ -237,14 +237,14 @@ function Home({ user }) {
         </div>
 
         <div className="home-pillar-grid">
-          <div className="home-pillar-mini">
+          <button type="button" className="home-pillar-mini" onClick={() => navigate('/registry')}>
             <div className="home-pillar-mini-icon">▤</div>
             <div className="home-pillar-mini-label">Assets</div>
             <div className={`home-pillar-mini-status ${activeAssets.length > 0 ? 'home-pillar-mini-status--slate' : 'home-pillar-mini-status--faint'}`}>
               {activeAssets.length} {activeAssets.length === 1 ? 'item' : 'items'}
             </div>
-          </div>
-          <div className="home-pillar-mini">
+          </button>
+          <button type="button" className="home-pillar-mini" onClick={() => navigate('/documents')}>
             <div className="home-pillar-mini-icon">📄</div>
             <div className="home-pillar-mini-label">Documents</div>
             {docsNeedingReview.length > 0 ? (
@@ -256,8 +256,8 @@ function Home({ user }) {
                 {estateDocs.length} on file
               </div>
             )}
-          </div>
-          <div className="home-pillar-mini">
+          </button>
+          <button type="button" className="home-pillar-mini" onClick={() => navigate('/profile')}>
             <div className="home-pillar-mini-icon">◯</div>
             <div className="home-pillar-mini-label">Beneficiaries</div>
             {activeBeneficiaries.length > 0 ? (
@@ -269,7 +269,7 @@ function Home({ user }) {
                 None added
               </div>
             )}
-          </div>
+          </button>
         </div>
       </div>
 

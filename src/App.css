@@ -4609,6 +4609,12 @@ select.detail-field-input option {
   flex-direction: column;
   gap: 4px;
   align-items: center;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.home-pillar-mini:hover {
+  background: var(--surface-3);
 }
 
 .home-pillar-mini-icon {
