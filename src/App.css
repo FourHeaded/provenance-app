@@ -3775,3 +3775,155 @@ button {
   letter-spacing: 4px;
   text-transform: uppercase;
 }
+
+/* ── Reports page ── */
+.report-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  padding: 28px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.report-card-head {
+  margin-bottom: 8px;
+}
+
+.report-card-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+}
+
+.report-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-weight: 300;
+}
+
+.report-options {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.report-option {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+
+.report-option:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.report-option--active {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.report-locked {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.report-locked-btn {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.report-locked-btn:hover {
+  background: var(--accent-gold);
+  transform: none;
+}
+
+.report-lock-icon {
+  margin-right: 8px;
+}
+
+.report-locked-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  text-align: center;
+  letter-spacing: 0.04em;
+}
+
+.report-error {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #e74c3c;
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  border-radius: 8px;
+  padding: 10px 12px;
+  line-height: 1.5;
+}
+
+/* Coming-soon variant */
+.report-card--coming {
+  opacity: 0.55;
+}
+
+.report-card--coming .report-card-title {
+  color: var(--text-secondary);
+}
+
+.report-coming-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-slate);
+  background: var(--accent-slate-glow);
+  border: 1px solid var(--accent-slate);
+  border-radius: 20px;
+  padding: 3px 10px;
+}
+
+/* ── Registry export nudge ── */
+.registry-export-nudge {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-bottom: 16px;
+  text-align: center;
+  font-style: italic;
+}
+
+.registry-export-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--accent-slate);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-style: italic;
+  letter-spacing: 0.02em;
+  transition: color 0.2s;
+}
+
+.registry-export-link:hover {
+  color: var(--accent-slate-light);
+  text-decoration: underline;
+}

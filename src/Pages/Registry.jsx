@@ -59,6 +59,17 @@ function Registry({ user }) {
           />
         </div>
 
+        <p className="registry-export-nudge">
+          Want a printable record of your assets?{' '}
+          <button
+            type="button"
+            className="registry-export-link"
+            onClick={() => navigate('/reports')}
+          >
+            Generate Registry Export →
+          </button>
+        </p>
+
         {usedCategories.length > 0 && (
           <div className="filter-bar">
             {usedCategories.map(cat => (

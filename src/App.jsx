@@ -24,6 +24,7 @@ function App() {
   const [authReady, setAuthReady]             = useState(false)
   const [onboardingChecked, setOnboardingChecked] = useState(false)
   const [showOnboarding, setShowOnboarding]   = useState(false)
+  const [isPremium, setIsPremium]             = useState(false)
   const [theme, setTheme]                     = useState(() => localStorage.getItem('prov-theme') || 'dark')
   const location = useLocation()
   const navigate = useNavigate()
@@ -82,10 +83,12 @@ function App() {
             createdAt: new Date().toISOString(),
             isPremium: false,
           })
+          setIsPremium(false)
         } else {
           const existing = snap.docs[0]
           const data = existing.data()
           complete = data.onboardingComplete === true
+          setIsPremium(data.isPremium === true)
           // Backfill createdAt for legacy users that never had one
           const updates = { ...profileFields }
           if (!data.createdAt) updates.createdAt = new Date().toISOString()
@@ -149,7 +152,7 @@ function App() {
           <Route path="/profile"             element={<Profile user={user} theme={theme} setTheme={setTheme} />} />
           <Route path="/archive"             element={<Archive user={user} />} />
           <Route path="/asset/:id"           element={<AssetDetailPage />} />
-          <Route path="/reports"             element={<Reports user={user} />} />
+          <Route path="/reports"             element={<Reports user={user} isPremium={isPremium} />} />
           <Route path="/shared/:ownerUid"    element={<SharedRegistry user={user} />} />
           <Route path="/admin"               element={<AdminDashboard user={user} />} />
         </Routes>
