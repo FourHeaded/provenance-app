@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { db } from '../firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 
+const DEFAULT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%231A1A1A'/%3E%3Crect x='60' y='60' width='80' height='60' rx='4' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Ccircle cx='85' cy='82' r='8' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Cpolyline points='60,120 85,95 105,112 125,88 140,120' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3C/svg%3E"
+
 function Registry({ user }) {
   const [assets, setAssets] = useState([])
   const [activeFilters, setActiveFilters] = useState([])
@@ -73,6 +75,11 @@ function Registry({ user }) {
               key={asset.id}
               onClick={() => navigate(`/asset/${asset.id}`, { state: { asset } })}
             >
+              <img
+                className="asset-card-thumbnail"
+                src={asset.imageBase64 || DEFAULT_IMAGE}
+                alt=""
+              />
               <div className="asset-card-left">
                 <div className="asset-name">{asset.name}</div>
                 <div className="asset-category">{asset.category}</div>
