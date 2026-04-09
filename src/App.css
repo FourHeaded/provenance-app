@@ -3521,3 +3521,150 @@ button {
     text-align: left;
   }
 }
+
+/* ── Legal pages (Terms & Privacy) ── */
+.legal-page {
+  max-width: 720px;
+  padding-bottom: 80px;
+}
+
+.legal-back {
+  margin-bottom: 20px;
+  display: inline-block;
+}
+
+.legal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.legal-content h2 {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  margin-top: 28px;
+  margin-bottom: 10px;
+  letter-spacing: 0.01em;
+}
+
+.legal-content h2:first-child {
+  margin-top: 0;
+}
+
+.legal-content p {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.8;
+  margin-bottom: 12px;
+  font-weight: 300;
+}
+
+.legal-content p strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.legal-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 14px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legal-list li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 14px;
+  color: var(--text-primary);
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+.legal-list li::before {
+  content: '·';
+  position: absolute;
+  left: 6px;
+  top: -2px;
+  color: var(--accent-gold);
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.legal-list li strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.legal-link {
+  color: var(--accent-gold);
+  text-decoration: none;
+  border-bottom: 1px solid var(--accent-gold-dark);
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.legal-link:hover {
+  color: var(--accent-gold-light);
+  border-color: var(--accent-gold);
+}
+
+/* ── Login screen footer ── */
+.login-footer {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.login-footer-link {
+  color: var(--text-faint);
+  text-decoration: none;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.login-footer-link:hover {
+  color: var(--accent-gold);
+}
+
+.login-footer-sep {
+  color: var(--text-faint);
+}
+
+/* ── Profile legal section ── */
+.profile-legal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 18px 24px;
+}
+
+.profile-legal-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.profile-legal-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: 8px 0;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.profile-legal-link:hover {
+  color: var(--accent-gold);
+}

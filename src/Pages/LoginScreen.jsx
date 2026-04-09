@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { auth, googleProvider, appleProvider } from '../firebase'
 import {
   signInWithPopup,
@@ -247,6 +248,12 @@ function LoginScreen({ isSharedPath, pendingPath }) {
           </button>
         </form>
       )}
+
+      <div className="login-footer">
+        <Link to="/terms"   className="login-footer-link">Terms</Link>
+        <span className="login-footer-sep">·</span>
+        <Link to="/privacy" className="login-footer-link">Privacy</Link>
+      </div>
     </div>
   )
 }

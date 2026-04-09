@@ -237,6 +237,17 @@ function Profile({ user }) {
         </div>
       )}
 
+      {/* Legal */}
+      <div className="profile-section profile-legal">
+        <div className="profile-legal-label">Legal</div>
+        <button className="profile-legal-link" onClick={() => navigate('/terms')}>
+          Terms of Service
+        </button>
+        <button className="profile-legal-link" onClick={() => navigate('/privacy')}>
+          Privacy Policy
+        </button>
+      </div>
+
       {/* Sign out */}
       <div className="profile-section">
         <button className="btn-ghost profile-signout" onClick={handleSignOut}>
