@@ -35,10 +35,15 @@ service cloud.firestore {
                             && request.auth.uid == resource.data.registryOwnerUid;
     }
 
-    // User settings: users can only access their own document
-    match /userSettings/{userId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == userId;
+    // User settings: documents use auto-generated IDs with a uid field,
+    // so we check the uid field in the document data rather than the doc ID.
+    match /userSettings/{settingsId} {
+      // Read and update existing documents
+      allow read, update, delete: if request.auth != null
+                                  && resource.data.uid == request.auth.uid;
+      // Create a new settings document (doc doesn't exist yet, use request.resource)
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
     }
 
     // Block everything else

@@ -1920,3 +1920,261 @@ button {
   color: var(--text-secondary);
   font-style: italic;
 }
+
+/* ── Onboarding ── */
+.ob-root {
+  position: fixed;
+  inset: 0;
+  background: var(--surface-0);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  z-index: 100;
+}
+
+.ob-skip {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px 0;
+  z-index: 10;
+  transition: color 0.2s;
+}
+
+.ob-skip:hover {
+  color: var(--text-secondary);
+}
+
+.ob-body {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 32px 24px;
+  animation: obEnter 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes obEnter {
+  from {
+    opacity: 0;
+    transform: translateX(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.ob-screen {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.ob-screen--welcome {
+  align-items: center;
+  text-align: center;
+}
+
+.ob-screen--ready {
+  align-items: center;
+  text-align: center;
+}
+
+.ob-ornament {
+  width: 48px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--accent-gold), transparent);
+}
+
+.ob-wordmark {
+  font-family: 'Playfair Display', serif;
+  font-size: 56px;
+  font-weight: 600;
+  color: var(--accent-gold);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+
+.ob-tagline {
+  font-family: 'Playfair Display', serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.ob-subtext {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.8;
+}
+
+.ob-subtext--centered {
+  text-align: center;
+}
+
+.ob-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.ob-heading--centered {
+  text-align: center;
+}
+
+/* Feature cards */
+.ob-feature-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ob-feature-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  padding: 18px 20px;
+}
+
+.ob-feature-icon {
+  font-size: 22px;
+  color: var(--accent-gold);
+  line-height: 1;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ob-feature-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  letter-spacing: 0.01em;
+}
+
+.ob-feature-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* Steps */
+.ob-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.ob-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.ob-step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--accent-gold-dark);
+  background: var(--accent-gold-glow);
+  color: var(--accent-gold);
+  font-family: 'Playfair Display', serif;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ob-step-body {
+  padding-top: 4px;
+}
+
+.ob-step-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.ob-step-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+/* CTAs */
+.ob-cta {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.ob-cta-ghost {
+  width: 100%;
+  height: 52px;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.ob-cta-ghost:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.ob-ready-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Progress dots */
+.ob-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  flex-shrink: 0;
+}
+
+.ob-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--border-soft);
+  transition: background 0.25s, transform 0.25s;
+}
+
+.ob-dot--active {
+  background: var(--accent-gold);
+  transform: scale(1.3);
+}
