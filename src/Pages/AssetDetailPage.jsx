@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { db } from '../firebase'
+import { db, storage } from '../firebase'
 import { doc, updateDoc } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import ProvenanceNotes from '../ProvenanceNotes'
 
 const DEFAULT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%231A1A1A'/%3E%3Crect x='60' y='60' width='80' height='60' rx='4' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Ccircle cx='85' cy='82' r='8' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Cpolyline points='60,120 85,95 105,112 125,88 140,120' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3C/svg%3E"
@@ -14,19 +15,43 @@ function docIcon(type) {
   return '📎'
 }
 
-function openBase64(base64, type, name) {
+// Used only for backward-compat base64 documents
+function openBase64(base64, type) {
   const byteStr = atob(base64.split(',')[1])
   const ab = new ArrayBuffer(byteStr.length)
   const ia = new Uint8Array(ab)
   for (let i = 0; i < byteStr.length; i++) ia[i] = byteStr.charCodeAt(i)
   const blob = new Blob([ab], { type })
   const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.target = '_blank'
-  a.rel = 'noopener noreferrer'
-  a.click()
+  window.open(url, '_blank', 'noopener,noreferrer')
   setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
+function openDocument(document) {
+  if (document.url) {
+    window.open(document.url, '_blank', 'noopener,noreferrer')
+  } else if (document.base64) {
+    openBase64(document.base64, document.type)
+  }
+}
+
+// Returns the src for a photo item — items may be legacy base64 strings or {url, storagePath} objects
+function photoSrc(item) {
+  return typeof item === 'string' ? item : item.url
+}
+
+async function uploadToStorage(storagePath, file) {
+  const storageRef = ref(storage, storagePath)
+  await uploadBytes(storageRef, file)
+  return getDownloadURL(storageRef)
+}
+
+async function deleteFromStorage(storagePath) {
+  try {
+    await deleteObject(ref(storage, storagePath))
+  } catch {
+    // File may not exist (e.g. legacy base64 assets) — ignore
+  }
 }
 
 function AssetDetailPage() {
@@ -38,7 +63,7 @@ function AssetDetailPage() {
   const [confirmArchive, setConfirmArchive] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [lightbox, setLightbox] = useState(null) // base64 string
+  const [lightbox, setLightbox] = useState(null)
   const [addingPhoto, setAddingPhoto] = useState(false)
   const [addingDoc, setAddingDoc] = useState(false)
   const photoInputRef = useRef(null)
@@ -52,24 +77,30 @@ function AssetDetailPage() {
   })
 
   if (!asset) {
-    return (
-      <div className="page">
-        <p className="placeholder-text">Asset not found.</p>
-      </div>
-    )
+    return <div className="page"><p className="placeholder-text">Asset not found.</p></div>
   }
 
-  // Build the gallery: hero image first, then additionalImages
+  const uid = asset.uid
+  const assetId = asset.id
+  const photoBase = `users/${uid}/assets/${assetId}/photos`
+  const docBase = `users/${uid}/assets/${assetId}/documents`
+
+  // Gallery: hero first (URL or base64), then additionalImages
+  const heroSrc = asset.imageUrl || asset.imageBase64 || null
   const galleryImages = [
-    ...(asset.imageBase64 ? [asset.imageBase64] : []),
-    ...(asset.additionalImages || []),
+    ...(heroSrc ? [{ src: heroSrc, isHero: true }] : []),
+    ...(asset.additionalImages || []).map(item => ({
+      src: photoSrc(item),
+      storagePath: typeof item === 'string' ? null : item.storagePath,
+      isHero: false,
+    })),
   ]
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
   const handleSave = async () => {
     setSaving(true)
-    await updateDoc(doc(db, 'assets', asset.id), form)
+    await updateDoc(doc(db, 'assets', assetId), form)
     setAsset({ ...asset, ...form })
     setEditing(false)
     setSaving(false)
@@ -81,83 +112,79 @@ function AssetDetailPage() {
   }
 
   const handleArchive = async () => {
-    await updateDoc(doc(db, 'assets', asset.id), { itemStatus: 'archived' })
+    await updateDoc(doc(db, 'assets', assetId), { itemStatus: 'archived' })
     navigate('/registry')
   }
 
+  // ── Hero image (thumbnail) ──
   const handleHeroImageChange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     setUploading(true)
-    const reader = new FileReader()
-    reader.onloadend = async () => {
-      const base64 = reader.result
-      await updateDoc(doc(db, 'assets', asset.id), { imageBase64: base64 })
-      setAsset({ ...asset, imageBase64: base64 })
-      setUploading(false)
-    }
-    reader.readAsDataURL(file)
+    const storagePath = `${photoBase}/hero`
+    const url = await uploadToStorage(storagePath, file)
+    await updateDoc(doc(db, 'assets', assetId), { imageUrl: url, imageBase64: null })
+    setAsset({ ...asset, imageUrl: url, imageBase64: null })
+    setUploading(false)
   }
 
-  // ── Photos ──
-
+  // ── Additional photos ──
   const handleAddPhoto = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     setAddingPhoto(true)
-    const reader = new FileReader()
-    reader.onloadend = async () => {
-      const base64 = reader.result
-      const updated = [...(asset.additionalImages || []), base64]
-      await updateDoc(doc(db, 'assets', asset.id), { additionalImages: updated })
-      setAsset({ ...asset, additionalImages: updated })
-      setAddingPhoto(false)
-      photoInputRef.current.value = ''
-    }
-    reader.readAsDataURL(file)
+    const storagePath = `${photoBase}/${Date.now()}-${file.name}`
+    const url = await uploadToStorage(storagePath, file)
+    const newItem = { url, storagePath }
+    const updated = [...(asset.additionalImages || []), newItem]
+    await updateDoc(doc(db, 'assets', assetId), { additionalImages: updated })
+    setAsset({ ...asset, additionalImages: updated })
+    setAddingPhoto(false)
+    photoInputRef.current.value = ''
   }
 
   const handleDeletePhoto = async (index) => {
-    // index is into galleryImages; index 0 is the hero if it exists
-    const heroExists = !!asset.imageBase64
-    if (heroExists && index === 0) {
-      // delete the hero image
-      await updateDoc(doc(db, 'assets', asset.id), { imageBase64: null })
-      setAsset({ ...asset, imageBase64: null })
+    const item = galleryImages[index]
+    if (item.isHero) {
+      if (asset.imageUrl) await deleteFromStorage(`${photoBase}/hero`)
+      await updateDoc(doc(db, 'assets', assetId), { imageUrl: null, imageBase64: null })
+      setAsset({ ...asset, imageUrl: null, imageBase64: null })
     } else {
-      const additionalIndex = heroExists ? index - 1 : index
+      const additionalIndex = heroSrc ? index - 1 : index
+      const target = (asset.additionalImages || [])[additionalIndex]
+      if (target?.storagePath) await deleteFromStorage(target.storagePath)
       const updated = (asset.additionalImages || []).filter((_, i) => i !== additionalIndex)
-      await updateDoc(doc(db, 'assets', asset.id), { additionalImages: updated })
+      await updateDoc(doc(db, 'assets', assetId), { additionalImages: updated })
       setAsset({ ...asset, additionalImages: updated })
     }
   }
 
   // ── Documents ──
-
   const handleAddDoc = async (e) => {
     const file = e.target.files[0]
     if (!file) return
     setAddingDoc(true)
-    const reader = new FileReader()
-    reader.onloadend = async () => {
-      const newDoc = {
-        name: file.name,
-        type: file.type,
-        base64: reader.result,
-        uploadedAt: new Date().toISOString(),
-      }
-      const updated = [...(asset.documents || []), newDoc]
-      await updateDoc(doc(db, 'assets', asset.id), { documents: updated })
-      setAsset({ ...asset, documents: updated })
-      setAddingDoc(false)
-      docInputRef.current.value = ''
+    const storagePath = `${docBase}/${Date.now()}-${file.name}`
+    const url = await uploadToStorage(storagePath, file)
+    const newDoc = {
+      name: file.name,
+      type: file.type,
+      url,
+      storagePath,
+      uploadedAt: new Date().toISOString(),
     }
-    reader.readAsDataURL(file)
+    const updated = [...(asset.documents || []), newDoc]
+    await updateDoc(doc(db, 'assets', assetId), { documents: updated })
+    setAsset({ ...asset, documents: updated })
+    setAddingDoc(false)
+    docInputRef.current.value = ''
   }
 
   const handleDeleteDoc = async (index) => {
+    const target = (asset.documents || [])[index]
+    if (target?.storagePath) await deleteFromStorage(target.storagePath)
     const updated = (asset.documents || []).filter((_, i) => i !== index)
-    await updateDoc(doc(db, 'assets', asset.id), { documents: updated })
+    await updateDoc(doc(db, 'assets', assetId), { documents: updated })
     setAsset({ ...asset, documents: updated })
   }
 
@@ -169,7 +196,6 @@ function AssetDetailPage() {
   return (
     <div className="page">
 
-      {/* Lightbox */}
       {lightbox && (
         <div className="lightbox-overlay" onClick={() => setLightbox(null)}>
           <button className="lightbox-close" onClick={() => setLightbox(null)}>✕</button>
@@ -222,7 +248,7 @@ function AssetDetailPage() {
           </div>
           <div className="detail-thumbnail-wrap">
             <img
-              src={asset.imageBase64 || DEFAULT_IMAGE}
+              src={asset.imageUrl || asset.imageBase64 || DEFAULT_IMAGE}
               alt={asset.name}
               className="detail-thumbnail"
             />
@@ -251,7 +277,6 @@ function AssetDetailPage() {
         <ProvenanceNotes asset={asset} onUpdate={setAsset} isPremium={false} />
       </div>
 
-      {/* ── Documents & Photos ── */}
       <div className="detail-section">
         <h2 className="section-label">Documents & Photos</h2>
 
@@ -259,38 +284,25 @@ function AssetDetailPage() {
         <div className="vault-subsection">
           <div className="vault-subsection-header">
             <span className="vault-subsection-label">Photos</span>
-            <button
-              className="vault-add-btn"
-              onClick={() => photoInputRef.current.click()}
-              disabled={addingPhoto}
-            >
-              {addingPhoto ? 'Saving...' : '+ Add Photo'}
+            <button className="vault-add-btn" onClick={() => photoInputRef.current.click()} disabled={addingPhoto}>
+              {addingPhoto ? 'Uploading...' : '+ Add Photo'}
             </button>
-            <input
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleAddPhoto}
-              style={{ display: 'none' }}
-            />
+            <input ref={photoInputRef} type="file" accept="image/*"
+              onChange={handleAddPhoto} style={{ display: 'none' }} />
           </div>
 
           {galleryImages.length === 0 ? (
-            <div className="vault-empty">
-              <p>No photos yet. Add your first photo above.</p>
-            </div>
+            <div className="vault-empty"><p>No photos yet. Add your first photo above.</p></div>
           ) : (
             <div className="photo-grid">
-              {galleryImages.map((src, i) => (
-                <div key={i} className="photo-grid-item" onClick={() => setLightbox(src)}>
-                  <img src={src} alt={`Photo ${i + 1}`} className="photo-grid-img" />
+              {galleryImages.map((item, i) => (
+                <div key={i} className="photo-grid-item" onClick={() => setLightbox(item.src)}>
+                  <img src={item.src} alt={`Photo ${i + 1}`} className="photo-grid-img" />
                   <button
                     className="photo-delete-btn"
                     onClick={e => { e.stopPropagation(); handleDeletePhoto(i) }}
                     title="Remove photo"
-                  >
-                    ✕
-                  </button>
+                  >✕</button>
                 </div>
               ))}
             </div>
@@ -301,20 +313,12 @@ function AssetDetailPage() {
         <div className="vault-subsection">
           <div className="vault-subsection-header">
             <span className="vault-subsection-label">Documents</span>
-            <button
-              className="vault-add-btn"
-              onClick={() => docInputRef.current.click()}
-              disabled={addingDoc}
-            >
-              {addingDoc ? 'Saving...' : '+ Attach Document'}
+            <button className="vault-add-btn" onClick={() => docInputRef.current.click()} disabled={addingDoc}>
+              {addingDoc ? 'Uploading...' : '+ Attach Document'}
             </button>
-            <input
-              ref={docInputRef}
-              type="file"
+            <input ref={docInputRef} type="file"
               accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,image/*,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-              onChange={handleAddDoc}
-              style={{ display: 'none' }}
-            />
+              onChange={handleAddDoc} style={{ display: 'none' }} />
           </div>
 
           {(asset.documents || []).length === 0 ? (
@@ -325,11 +329,7 @@ function AssetDetailPage() {
             <div className="doc-list">
               {asset.documents.map((document, i) => (
                 <div key={i} className="doc-row">
-                  <button
-                    className="doc-row-main"
-                    onClick={() => openBase64(document.base64, document.type, document.name)}
-                    title="Open document"
-                  >
+                  <button className="doc-row-main" onClick={() => openDocument(document)} title="Open document">
                     <span className="doc-icon">{docIcon(document.type)}</span>
                     <div className="doc-info">
                       <span className="doc-name">{document.name}</span>
@@ -337,13 +337,7 @@ function AssetDetailPage() {
                     </div>
                     <span className="doc-open">↗</span>
                   </button>
-                  <button
-                    className="doc-delete-btn"
-                    onClick={() => handleDeleteDoc(i)}
-                    title="Delete document"
-                  >
-                    ✕
-                  </button>
+                  <button className="doc-delete-btn" onClick={() => handleDeleteDoc(i)} title="Delete document">✕</button>
                 </div>
               ))}
             </div>

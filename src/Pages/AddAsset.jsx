@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { db } from '../firebase'
+import { db, storage } from '../firebase'
 import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { PRESET_CATEGORIES } from '../categories'
 import '../ProvenanceNotes.css'
 
@@ -20,7 +21,7 @@ function AddAsset({ user }) {
   const [customCategories, setCustomCategories] = useState([])
   const [customCategoryInput, setCustomCategoryInput] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
-  const [imageBase64, setImageBase64] = useState(null)
+  const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
   const fileInputRef = useRef(null)
@@ -93,7 +94,7 @@ function AddAsset({ user }) {
     const reader = new FileReader()
     reader.onloadend = async () => {
       const base64 = reader.result
-      setImageBase64(base64)
+      setPhotoFile(file)
       setPhotoPreview(base64)
 
       if (!isPremium) return
@@ -170,14 +171,19 @@ The JSON must have exactly these fields:
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    const newAsset = {
+    const docRef = await addDoc(collection(db, 'assets'), {
       ...form,
       notes,
       uid: user.uid,
       createdAt: new Date(),
-      ...(imageBase64 ? { imageBase64 } : {}),
+    })
+    if (photoFile) {
+      const storagePath = `users/${user.uid}/assets/${docRef.id}/photos/hero`
+      const storageRef = ref(storage, storagePath)
+      await uploadBytes(storageRef, photoFile)
+      const imageUrl = await getDownloadURL(storageRef)
+      await updateDoc(docRef, { imageUrl })
     }
-    await addDoc(collection(db, 'assets'), newAsset)
     navigate('/registry')
   }
 
@@ -208,7 +214,7 @@ The JSON must have exactly these fields:
                       className="btn-ghost btn-small"
                       onClick={() => {
                         setPhotoPreview(null)
-                        setImageBase64(null)
+                        setPhotoFile(null)
                         fileInputRef.current.value = ''
                       }}
                     >
