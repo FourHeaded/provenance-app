@@ -3927,3 +3927,165 @@ button {
   color: var(--accent-slate-light);
   text-decoration: underline;
 }
+
+/* ── Asset detail collapsible field sections ── */
+.detail-section-toggle {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin-bottom: 12px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.detail-section-toggle .section-label {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+
+.detail-section-summary {
+  flex: 1;
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+}
+
+.detail-section-empty {
+  font-style: italic;
+  color: var(--text-faint);
+  font-size: 12px;
+}
+
+.detail-section-empty--unassigned {
+  color: var(--text-faint);
+}
+
+.detail-section-chevron {
+  font-size: 14px;
+  color: var(--text-faint);
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+/* Field rows inside expanded sections */
+.detail-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+}
+
+.detail-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.detail-field-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.detail-field-value {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.detail-field-empty {
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.detail-field-input {
+  font-family: 'Inter', sans-serif;
+  height: 42px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 0 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.detail-field-input::placeholder {
+  color: var(--text-faint);
+}
+
+.detail-field-input:focus {
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
+}
+
+select.detail-field-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-faint) 50%),
+                    linear-gradient(135deg, var(--text-faint) 50%, transparent 50%);
+  background-position: calc(100% - 18px) center, calc(100% - 13px) center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 32px;
+}
+
+select.detail-field-input option {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+/* Pill row (condition, acquisition type) */
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pill {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.pill:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.pill--active {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.pill:disabled {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.pill--active:disabled {
+  opacity: 1;
+}

@@ -123,6 +123,29 @@ The login screen is shown when `!user`. The onboarding flow is shown when a sign
   interestedParties: [          // beneficiaries who hit "Express Interest"
     { email, name, expressedAt }
   ],
+
+  // Nested field groups (added in the data/fields pass).
+  // Always update via Firestore dot notation
+  // (e.g. 'ownership.acquiredFrom') so siblings aren't overwritten.
+  details: {
+    condition: 'Excellent' | 'Good' | 'Fair' | 'Poor' | '',
+    location:  string,          // free text, e.g. "Safe deposit box — First Bank"
+  },
+  ownership: {
+    acquisitionType: 'Purchased' | 'Inherited' | 'Gifted' | 'Commissioned' | 'Other' | '',
+    acquiredFrom:    string,
+    acquiredDate:    string,    // ISO date YYYY-MM-DD
+    purchasePrice:   number,
+  },
+  insurance: {
+    insurer:        string,
+    policyNumber:   string,
+    coverageAmount: number,
+    lastAppraised:  string,     // ISO date YYYY-MM-DD
+    appraisedBy:    string,
+  },
+  assignedBeneficiary: string,  // invite document ID `{ownerUid}_{email}`, or '' if unassigned
+
   itemStatus: 'archived' | undefined,
   createdAt, updatedAt
 }

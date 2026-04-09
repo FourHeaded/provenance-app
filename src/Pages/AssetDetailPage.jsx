@@ -1,9 +1,38 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { db, storage } from '../firebase'
-import { doc, updateDoc } from 'firebase/firestore'
+import { collection, doc, getDocs, query, updateDoc, where, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import ProvenanceNotes from '../ProvenanceNotes'
+
+// ── Constants for the new field groups ──
+const CONDITION_OPTIONS    = ['Excellent', 'Good', 'Fair', 'Poor', 'Unknown']
+const ACQUISITION_OPTIONS  = ['Purchased', 'Inherited', 'Gifted', 'Commissioned', 'Other']
+
+function formatLongDate(iso) {
+  if (!iso) return ''
+  // Append time so the date isn't shifted by the local timezone
+  const d = new Date(iso.length === 10 ? iso + 'T00:00:00' : iso)
+  if (isNaN(d.getTime())) return ''
+  return d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
+}
+
+function formatMoney(v) {
+  if (v === '' || v == null) return ''
+  const n = parseFloat(v)
+  if (isNaN(n)) return ''
+  return `$${n.toLocaleString('en-US')}`
+}
+
+function priceLabel(acquisitionType) {
+  return acquisitionType === 'Inherited' || acquisitionType === 'Gifted'
+    ? 'Appraised at acquisition'
+    : 'Purchase price'
+}
+
+function summarize(parts) {
+  return parts.filter(Boolean).join(' · ')
+}
 
 const DEFAULT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%231A1A1A'/%3E%3Crect x='60' y='60' width='80' height='60' rx='4' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Ccircle cx='85' cy='82' r='8' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Cpolyline points='60,120 85,95 105,112 125,88 140,120' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3C/svg%3E"
 
@@ -66,6 +95,13 @@ function AssetDetailPage() {
   const [lightbox, setLightbox] = useState(null)
   const [addingPhoto, setAddingPhoto] = useState(false)
   const [addingDoc, setAddingDoc] = useState(false)
+  const [invites, setInvites] = useState([])
+  const [openSections, setOpenSections] = useState({
+    details: false,
+    ownership: false,
+    insurance: false,
+    beneficiary: false,
+  })
   const photoInputRef = useRef(null)
   const docInputRef = useRef(null)
 
@@ -73,8 +109,55 @@ function AssetDetailPage() {
     name: asset?.name || '',
     category: asset?.category || '',
     description: asset?.description || '',
-    value: asset?.value || ''
+    value: asset?.value || '',
+    details: {
+      condition: asset?.details?.condition || '',
+      location:  asset?.details?.location  || '',
+    },
+    ownership: {
+      acquisitionType: asset?.ownership?.acquisitionType || '',
+      acquiredFrom:    asset?.ownership?.acquiredFrom    || '',
+      acquiredDate:    asset?.ownership?.acquiredDate    || '',
+      purchasePrice:   asset?.ownership?.purchasePrice ?? '',
+    },
+    insurance: {
+      insurer:        asset?.insurance?.insurer        || '',
+      policyNumber:   asset?.insurance?.policyNumber   || '',
+      coverageAmount: asset?.insurance?.coverageAmount ?? '',
+      lastAppraised:  asset?.insurance?.lastAppraised  || '',
+      appraisedBy:    asset?.insurance?.appraisedBy    || '',
+    },
+    assignedBeneficiary: asset?.assignedBeneficiary || '',
   })
+
+  // Load the owner's invites for the beneficiary dropdown
+  useEffect(() => {
+    if (!asset?.uid) return
+    const loadInvites = async () => {
+      try {
+        const snap = await getDocs(query(
+          collection(db, 'invites'),
+          where('registryOwnerUid', '==', asset.uid),
+        ))
+        setInvites(
+          snap.docs
+            .map(d => ({ id: d.id, ...d.data() }))
+            .filter(i => i.status !== 'declined')
+        )
+      } catch (e) {
+        console.error('Failed to load invites:', e)
+      }
+    }
+    loadInvites()
+  }, [asset?.uid])
+
+  const handleNestedChange = (group, field, value) => {
+    setForm(prev => ({ ...prev, [group]: { ...prev[group], [field]: value } }))
+  }
+
+  const toggleSection = (key) => {
+    setOpenSections(s => ({ ...s, [key]: !s[key] }))
+  }
 
   if (!asset) {
     return <div className="page"><p className="placeholder-text">Asset not found.</p></div>
@@ -98,16 +181,94 @@ function AssetDetailPage() {
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
 
+  const numericOrEmpty = (v) => {
+    if (v === '' || v == null) return ''
+    const n = parseFloat(v)
+    return isNaN(n) ? '' : n
+  }
+
   const handleSave = async () => {
     setSaving(true)
-    await updateDoc(doc(db, 'assets', assetId), form)
-    setAsset({ ...asset, ...form })
+    const updates = {
+      name: form.name,
+      category: form.category,
+      description: form.description,
+      value: form.value,
+      // Nested groups via dot notation so we never overwrite siblings
+      'details.condition':         form.details.condition,
+      'details.location':          form.details.location,
+      'ownership.acquisitionType': form.ownership.acquisitionType,
+      'ownership.acquiredFrom':    form.ownership.acquiredFrom,
+      'ownership.acquiredDate':    form.ownership.acquiredDate,
+      'ownership.purchasePrice':   numericOrEmpty(form.ownership.purchasePrice),
+      'insurance.insurer':         form.insurance.insurer,
+      'insurance.policyNumber':    form.insurance.policyNumber,
+      'insurance.coverageAmount':  numericOrEmpty(form.insurance.coverageAmount),
+      'insurance.lastAppraised':   form.insurance.lastAppraised,
+      'insurance.appraisedBy':     form.insurance.appraisedBy,
+      assignedBeneficiary:         form.assignedBeneficiary,
+      updatedAt:                   serverTimestamp(),
+    }
+    await updateDoc(doc(db, 'assets', assetId), updates)
+
+    // Sync local state
+    setAsset({
+      ...asset,
+      name: form.name,
+      category: form.category,
+      description: form.description,
+      value: form.value,
+      details: {
+        ...(asset.details || {}),
+        condition: form.details.condition,
+        location:  form.details.location,
+      },
+      ownership: {
+        ...(asset.ownership || {}),
+        acquisitionType: form.ownership.acquisitionType,
+        acquiredFrom:    form.ownership.acquiredFrom,
+        acquiredDate:    form.ownership.acquiredDate,
+        purchasePrice:   numericOrEmpty(form.ownership.purchasePrice),
+      },
+      insurance: {
+        ...(asset.insurance || {}),
+        insurer:        form.insurance.insurer,
+        policyNumber:   form.insurance.policyNumber,
+        coverageAmount: numericOrEmpty(form.insurance.coverageAmount),
+        lastAppraised:  form.insurance.lastAppraised,
+        appraisedBy:    form.insurance.appraisedBy,
+      },
+      assignedBeneficiary: form.assignedBeneficiary,
+    })
     setEditing(false)
     setSaving(false)
   }
 
   const handleCancel = () => {
-    setForm({ name: asset.name, category: asset.category, description: asset.description, value: asset.value })
+    setForm({
+      name: asset.name,
+      category: asset.category,
+      description: asset.description,
+      value: asset.value,
+      details: {
+        condition: asset.details?.condition || '',
+        location:  asset.details?.location  || '',
+      },
+      ownership: {
+        acquisitionType: asset.ownership?.acquisitionType || '',
+        acquiredFrom:    asset.ownership?.acquiredFrom    || '',
+        acquiredDate:    asset.ownership?.acquiredDate    || '',
+        purchasePrice:   asset.ownership?.purchasePrice ?? '',
+      },
+      insurance: {
+        insurer:        asset.insurance?.insurer        || '',
+        policyNumber:   asset.insurance?.policyNumber   || '',
+        coverageAmount: asset.insurance?.coverageAmount ?? '',
+        lastAppraised:  asset.insurance?.lastAppraised  || '',
+        appraisedBy:    asset.insurance?.appraisedBy    || '',
+      },
+      assignedBeneficiary: asset.assignedBeneficiary || '',
+    })
     setEditing(false)
   }
 
@@ -276,6 +437,310 @@ function AssetDetailPage() {
         <h2 className="section-label">Provenance Notes</h2>
         <ProvenanceNotes asset={asset} onUpdate={setAsset} isPremium={false} />
       </div>
+
+      {/* ── Details ── */}
+      {(() => {
+        const summary = summarize([asset.details?.condition, asset.details?.location])
+        const open = openSections.details
+        const activeCondition = (editing ? form.details.condition : asset.details?.condition) || 'Unknown'
+        return (
+          <div className="detail-section">
+            <button type="button" className="detail-section-toggle" onClick={() => toggleSection('details')}>
+              <h2 className="section-label">Details</h2>
+              <span className="detail-section-summary">
+                {summary || <span className="detail-section-empty">Add details</span>}
+              </span>
+              <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+            </button>
+            {open && (
+              <div className="detail-card detail-fields">
+                <div className="detail-field">
+                  <div className="detail-field-label">Condition</div>
+                  <div className="pill-row">
+                    {CONDITION_OPTIONS.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={`pill ${activeCondition === opt ? 'pill--active' : ''}`}
+                        onClick={() => editing && handleNestedChange('details', 'condition', opt === 'Unknown' ? '' : opt)}
+                        disabled={!editing}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Location</div>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={form.details.location}
+                      onChange={e => handleNestedChange('details', 'location', e.target.value)}
+                      placeholder="e.g. Safe deposit box — First Bank"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.details?.location || <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── Ownership ── */}
+      {(() => {
+        const summary = summarize([
+          asset.ownership?.acquisitionType,
+          asset.ownership?.acquiredDate ? formatLongDate(asset.ownership.acquiredDate) : null,
+        ])
+        const open = openSections.ownership
+        const activeType = editing ? form.ownership.acquisitionType : (asset.ownership?.acquisitionType || '')
+        const currentPriceLabel = priceLabel(editing ? form.ownership.acquisitionType : asset.ownership?.acquisitionType)
+        return (
+          <div className="detail-section">
+            <button type="button" className="detail-section-toggle" onClick={() => toggleSection('ownership')}>
+              <h2 className="section-label">Ownership</h2>
+              <span className="detail-section-summary">
+                {summary || <span className="detail-section-empty">Add details</span>}
+              </span>
+              <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+            </button>
+            {open && (
+              <div className="detail-card detail-fields">
+                <div className="detail-field">
+                  <div className="detail-field-label">Acquisition type</div>
+                  <div className="pill-row">
+                    {ACQUISITION_OPTIONS.map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={`pill ${activeType === opt ? 'pill--active' : ''}`}
+                        onClick={() => editing && handleNestedChange('ownership', 'acquisitionType', opt)}
+                        disabled={!editing}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Acquired from</div>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={form.ownership.acquiredFrom}
+                      onChange={e => handleNestedChange('ownership', 'acquiredFrom', e.target.value)}
+                      placeholder="Person, dealer, or estate"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.ownership?.acquiredFrom || <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Acquired date</div>
+                  {editing ? (
+                    <input
+                      type="date"
+                      className="detail-field-input"
+                      value={form.ownership.acquiredDate}
+                      onChange={e => handleNestedChange('ownership', 'acquiredDate', e.target.value)}
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.ownership?.acquiredDate
+                        ? formatLongDate(asset.ownership.acquiredDate)
+                        : <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">{currentPriceLabel}</div>
+                  {editing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="detail-field-input"
+                      value={form.ownership.purchasePrice}
+                      onChange={e => handleNestedChange('ownership', 'purchasePrice', e.target.value)}
+                      placeholder="0"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.ownership?.purchasePrice
+                        ? formatMoney(asset.ownership.purchasePrice)
+                        : <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── Insurance & Appraisal ── */}
+      {(() => {
+        const summary = summarize([
+          asset.insurance?.insurer,
+          asset.insurance?.coverageAmount ? `${formatMoney(asset.insurance.coverageAmount)} coverage` : null,
+        ])
+        const open = openSections.insurance
+        return (
+          <div className="detail-section">
+            <button type="button" className="detail-section-toggle" onClick={() => toggleSection('insurance')}>
+              <h2 className="section-label">Insurance & Appraisal</h2>
+              <span className="detail-section-summary">
+                {summary || <span className="detail-section-empty">Add details</span>}
+              </span>
+              <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+            </button>
+            {open && (
+              <div className="detail-card detail-fields">
+                <div className="detail-field">
+                  <div className="detail-field-label">Insurer</div>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={form.insurance.insurer}
+                      onChange={e => handleNestedChange('insurance', 'insurer', e.target.value)}
+                      placeholder="Insurance company"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.insurance?.insurer || <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Policy number</div>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={form.insurance.policyNumber}
+                      onChange={e => handleNestedChange('insurance', 'policyNumber', e.target.value)}
+                      placeholder="Policy #"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.insurance?.policyNumber || <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Coverage amount</div>
+                  {editing ? (
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="detail-field-input"
+                      value={form.insurance.coverageAmount}
+                      onChange={e => handleNestedChange('insurance', 'coverageAmount', e.target.value)}
+                      placeholder="0"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.insurance?.coverageAmount
+                        ? formatMoney(asset.insurance.coverageAmount)
+                        : <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Last appraised</div>
+                  {editing ? (
+                    <input
+                      type="date"
+                      className="detail-field-input"
+                      value={form.insurance.lastAppraised}
+                      onChange={e => handleNestedChange('insurance', 'lastAppraised', e.target.value)}
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.insurance?.lastAppraised
+                        ? formatLongDate(asset.insurance.lastAppraised)
+                        : <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+                <div className="detail-field">
+                  <div className="detail-field-label">Appraised by</div>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={form.insurance.appraisedBy}
+                      onChange={e => handleNestedChange('insurance', 'appraisedBy', e.target.value)}
+                      placeholder="Appraiser name"
+                    />
+                  ) : (
+                    <div className="detail-field-value">
+                      {asset.insurance?.appraisedBy || <span className="detail-field-empty">—</span>}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )
+      })()}
+
+      {/* ── Assigned Beneficiary ── */}
+      {(() => {
+        const assignedInvite = invites.find(i => i.id === asset.assignedBeneficiary)
+        const summary = assignedInvite
+          ? `${assignedInvite.invitedName} — ${assignedInvite.relationship}`
+          : null
+        const open = openSections.beneficiary
+        return (
+          <div className="detail-section">
+            <button type="button" className="detail-section-toggle" onClick={() => toggleSection('beneficiary')}>
+              <h2 className="section-label">Assigned Beneficiary</h2>
+              <span className="detail-section-summary">
+                {summary || <span className="detail-section-empty detail-section-empty--unassigned">Unassigned</span>}
+              </span>
+              <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+            </button>
+            {open && (
+              <div className="detail-card detail-fields">
+                {editing ? (
+                  invites.length === 0 ? (
+                    <p className="detail-field-empty">
+                      No beneficiaries invited yet. Add them in Profile.
+                    </p>
+                  ) : (
+                    <select
+                      className="detail-field-input"
+                      value={form.assignedBeneficiary}
+                      onChange={e => setForm(prev => ({ ...prev, assignedBeneficiary: e.target.value }))}
+                    >
+                      <option value="">Unassigned</option>
+                      {invites.map(inv => (
+                        <option key={inv.id} value={inv.id}>
+                          {inv.invitedName} — {inv.relationship}
+                        </option>
+                      ))}
+                    </select>
+                  )
+                ) : (
+                  <div className="detail-field-value">
+                    {summary || <span className="detail-field-empty">Unassigned</span>}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       <div className="detail-section">
         <h2 className="section-label">Documents & Photos</h2>
