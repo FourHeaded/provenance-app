@@ -1,9 +1,11 @@
 import { auth } from '../firebase'
 import { signOut } from 'firebase/auth'
+import { useNavigate } from 'react-router-dom'
 
 const isPremium = false
 
 function Profile({ user }) {
+  const navigate = useNavigate()
   const handleSignOut = () => signOut(auth)
 
   return (
@@ -38,6 +40,16 @@ function Profile({ user }) {
         {!isPremium && (
           <p className="profile-upgrade-hint">Upgrade to unlock reports, archive, and more.</p>
         )}
+      </div>
+
+      <div className="profile-section">
+        <button className="profile-menu-row" onClick={() => navigate('/archive')}>
+          <div className="profile-menu-row-text">
+            <span className="profile-menu-row-label">Archive</span>
+            <span className="profile-menu-row-description">View and restore archived assets</span>
+          </div>
+          <span className="profile-menu-row-chevron">›</span>
+        </button>
       </div>
 
       <div className="profile-section">

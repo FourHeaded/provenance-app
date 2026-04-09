@@ -977,6 +977,45 @@ button {
   border: 1px solid var(--border-soft);
 }
 
+.profile-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.profile-menu-row:hover .profile-menu-row-label {
+  color: var(--accent-gold);
+}
+
+.profile-menu-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.profile-menu-row-label {
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: color 0.2s;
+}
+
+.profile-menu-row-description {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+
+.profile-menu-row-chevron {
+  font-size: 20px;
+  color: var(--text-faint);
+  line-height: 1;
+}
+
 .profile-upgrade-hint {
   font-size: 12px;
   color: var(--text-faint);
