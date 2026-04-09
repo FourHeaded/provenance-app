@@ -1,10 +1,52 @@
-function Profile() {
-    return (
-      <div className="page">
-        <h2 className="section-label">Profile</h2>
-        <p className="placeholder-text">User settings coming soon.</p>
+import { auth } from '../firebase'
+import { signOut } from 'firebase/auth'
+
+const isPremium = false
+
+function Profile({ user }) {
+  const handleSignOut = () => signOut(auth)
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <h1 className="page-title">Profile</h1>
       </div>
-    )
-  }
-  
-  export default Profile
+
+      <div className="profile-card">
+        <div className="profile-avatar-wrap">
+          {user.photoURL ? (
+            <img className="profile-avatar" src={user.photoURL} alt={user.displayName} referrerPolicy="no-referrer" />
+          ) : (
+            <div className="profile-avatar-fallback">
+              {user.displayName?.charAt(0) ?? '?'}
+            </div>
+          )}
+        </div>
+        <div className="profile-info">
+          <div className="profile-name">{user.displayName}</div>
+          <div className="profile-email">{user.email}</div>
+        </div>
+      </div>
+
+      <div className="profile-section">
+        <div className="profile-row">
+          <span className="profile-row-label">Plan</span>
+          <span className={`premium-badge ${isPremium ? 'premium-badge--active' : 'premium-badge--free'}`}>
+            {isPremium ? 'Premium' : 'Free'}
+          </span>
+        </div>
+        {!isPremium && (
+          <p className="profile-upgrade-hint">Upgrade to unlock reports, archive, and more.</p>
+        )}
+      </div>
+
+      <div className="profile-section">
+        <button className="btn-ghost profile-signout" onClick={handleSignOut}>
+          Sign Out
+        </button>
+      </div>
+    </div>
+  )
+}
+
+export default Profile
