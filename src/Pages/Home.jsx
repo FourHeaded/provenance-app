@@ -12,7 +12,7 @@ function Home({ user }) {
     const loadAssets = async () => {
       const q = query(collection(db, 'assets'), where('uid', '==', user.uid))
       const snapshot = await getDocs(q)
-      setAssets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })))
+      setAssets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).filter(a => a.itemStatus !== 'archived'))
       setLoading(false)
     }
     loadAssets()

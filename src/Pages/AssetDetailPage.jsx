@@ -13,7 +13,7 @@ function AssetDetailPage() {
 
   const [asset, setAsset] = useState(location.state?.asset || null)
   const [editing, setEditing] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmArchive, setConfirmArchive] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
@@ -54,8 +54,8 @@ function AssetDetailPage() {
     setEditing(false)
   }
 
-  const handleDelete = async () => {
-    await deleteDoc(doc(db, 'assets', asset.id))
+  const handleArchive = async () => {
+    await updateDoc(doc(db, 'assets', asset.id), { itemStatus: 'archived' })
     navigate('/registry')
   }
 
@@ -182,17 +182,17 @@ function AssetDetailPage() {
       </div>
 
       <div className="detail-delete-zone">
-        {confirmDelete ? (
+        {confirmArchive ? (
           <div className="delete-confirm">
-            <p>Remove <strong>{asset.name}</strong> from the registry? This cannot be undone.</p>
+            <p>Move <strong>{asset.name}</strong> to the archive? You can reinstate it later.</p>
             <div className="delete-confirm-actions">
-              <button className="btn-ghost" onClick={() => setConfirmDelete(false)}>Cancel</button>
-              <button className="btn-danger" onClick={handleDelete}>Remove Asset</button>
+              <button className="btn-ghost" onClick={() => setConfirmArchive(false)}>Cancel</button>
+              <button className="btn-danger" onClick={handleArchive}>Move to Archive</button>
             </div>
           </div>
         ) : (
-          <button className="btn-delete-trigger" onClick={() => setConfirmDelete(true)}>
-            Remove from Registry
+          <button className="btn-delete-trigger" onClick={() => setConfirmArchive(true)}>
+            Move to Archive
           </button>
         )}
       </div>
