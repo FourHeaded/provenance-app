@@ -3,8 +3,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Admin access ───────────────────────────────────────────────
+    // Replace ADMIN_UID below with your Firebase Auth UID.
+    // This must match src/admin.js
+    function isAdmin() {
+      return request.auth != null
+             && request.auth.uid == '6Oqu1jFasvYOKauEqotgCMeQH7o1';
+    }
+
     // Assets
     match /assets/{assetId} {
+      // Admin: full read access for the dashboard
+      allow read: if isAdmin();
+
       // Any authenticated user can read (for shared registry view)
       allow read: if request.auth != null;
 
@@ -22,6 +33,9 @@ service cloud.firestore {
 
     // Invites
     match /invites/{inviteId} {
+      // Admin: full read access
+      allow read: if isAdmin();
+
       // Registry owner can create invites
       allow create: if request.auth != null
                     && request.auth.uid == request.resource.data.registryOwnerUid;
@@ -38,6 +52,9 @@ service cloud.firestore {
     // User settings: documents use auto-generated IDs with a uid field,
     // so we check the uid field in the document data rather than the doc ID.
     match /userSettings/{settingsId} {
+      // Admin: read all + update isPremium on any user
+      allow read, update: if isAdmin();
+
       // Read and update existing documents
       allow read, update, delete: if request.auth != null
                                   && resource.data.uid == request.auth.uid;

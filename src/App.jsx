@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { auth, db } from './firebase'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
 import AssetDetailPage from './pages/AssetDetailPage'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
@@ -14,6 +14,7 @@ import Reports from './pages/Reports'
 import SharedRegistry from './pages/SharedRegistry'
 import Onboarding from './pages/Onboarding'
 import LoginScreen from './pages/LoginScreen'
+import AdminDashboard from './pages/AdminDashboard'
 import './App.css'
 
 function App() {
@@ -45,25 +46,53 @@ function App() {
     return () => unsubscribe()
   }, [])
 
-  // Check onboarding status whenever user changes
+  // Initialize user settings doc + check onboarding status whenever user changes
   useEffect(() => {
     if (!user) return
-    const check = async () => {
+    const initialize = async () => {
       try {
         const snap = await getDocs(query(
           collection(db, 'userSettings'),
           where('uid', '==', user.uid),
         ))
-        const complete = !snap.empty && snap.docs[0].data().onboardingComplete === true
+
+        // Profile fields refreshed on every sign-in (so admin sees latest)
+        const profileFields = {
+          uid: user.uid,
+          displayName: user.displayName || '',
+          email: (user.email || '').toLowerCase(),
+          lastLogin: new Date().toISOString(),
+        }
+
+        let complete = false
+
+        if (snap.empty) {
+          // New user — create initial settings doc
+          await addDoc(collection(db, 'userSettings'), {
+            ...profileFields,
+            createdAt: new Date().toISOString(),
+            isPremium: false,
+          })
+        } else {
+          const existing = snap.docs[0]
+          const data = existing.data()
+          complete = data.onboardingComplete === true
+          // Backfill createdAt for legacy users that never had one
+          const updates = { ...profileFields }
+          if (!data.createdAt) updates.createdAt = new Date().toISOString()
+          await updateDoc(doc(db, 'userSettings', existing.id), updates)
+        }
+
         setShowOnboarding(!complete)
-      } catch {
+      } catch (e) {
         // Permissions error or any other failure — treat as new user, show onboarding
+        console.error('User init failed:', e)
         setShowOnboarding(true)
       } finally {
         setOnboardingChecked(true)
       }
     }
-    check()
+    initialize()
   }, [user?.uid])
 
   // Waiting for Firebase
@@ -103,6 +132,7 @@ function App() {
           <Route path="/asset/:id"           element={<AssetDetailPage />} />
           <Route path="/reports"             element={<Reports user={user} />} />
           <Route path="/shared/:ownerUid"    element={<SharedRegistry user={user} />} />
+          <Route path="/admin"               element={<AdminDashboard user={user} />} />
         </Routes>
       </div>
       {!isSharedRoute && <BottomNav />}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { auth, db } from '../firebase'
 import { signOut } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
+import { isAdmin } from '../admin'
 import {
   collection, addDoc, getDocs, deleteDoc,
   query, where, doc, serverTimestamp
@@ -222,6 +223,19 @@ function Profile({ user }) {
           <span className="profile-menu-row-chevron">›</span>
         </button>
       </div>
+
+      {/* Admin link — only visible to the operator */}
+      {isAdmin(user) && (
+        <div className="profile-section">
+          <button className="profile-menu-row" onClick={() => navigate('/admin')}>
+            <div className="profile-menu-row-text">
+              <span className="profile-menu-row-label">Admin Dashboard</span>
+              <span className="profile-menu-row-description">Operator tools and metrics</span>
+            </div>
+            <span className="profile-menu-row-chevron">›</span>
+          </button>
+        </div>
+      )}
 
       {/* Sign out */}
       <div className="profile-section">
