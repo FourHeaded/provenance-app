@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
+import Logo from '../components/Logo'
 
 function Home({ user }) {
   const [assets, setAssets] = useState([])
@@ -39,7 +40,7 @@ function Home({ user }) {
   return (
     <div className="page">
       <div className="page-header">
-        <h1 className="page-title">Provenance</h1>
+        <Logo variant="compact" />
         <p className="page-subtitle">Welcome back, {user.displayName?.split(' ')[0]}</p>
       </div>
 

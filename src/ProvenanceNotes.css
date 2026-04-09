@@ -20,9 +20,9 @@
   }
   
   .note-section-label {
-    font-family: 'Playfair Display', serif;
-    font-size: 15px;
-    font-weight: 400;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 300;
     font-style: italic;
     color: var(--text-secondary);
     letter-spacing: 0.02em;

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { auth, googleProvider, appleProvider } from '../firebase'
+import Logo from '../components/Logo'
 import {
   signInWithPopup,
   signInWithEmailAndPassword,
@@ -115,9 +116,7 @@ function LoginScreen({ isSharedPath, pendingPath }) {
 
   return (
     <div className="login-screen">
-      <div className="login-ornament" />
-      <h1>Provenance</h1>
-      <div className="login-ornament" />
+      <Logo variant="horizontal" theme={typeof document !== 'undefined' ? document.documentElement.getAttribute('data-theme') : (localStorage.getItem('prov-theme') || 'dark')} />
       <p className="login-tagline">Track and pass down what matters.</p>
       {isSharedPath && (
         <p className="login-shared-hint">Sign in to view the shared registry.</p>

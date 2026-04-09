@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { db } from '../firebase'
-import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
+import { collection, getDocs, getDoc, query, where, doc, updateDoc } from 'firebase/firestore'
 
 const ESTATE_CATEGORY_LABELS = {
   'will':           'Will & Testament',
@@ -42,23 +42,18 @@ function SharedRegistry({ user }) {
         setHasAccess(true)
         setOwnerName(user.displayName || '')
       } else {
-        // Query by owner only (avoids composite index requirement),
-        // then filter by the user's verified Google email client-side
+        // Deterministic invite ID lookup — no query, no composite index needed.
+        // Format must match what Profile.jsx writes: `{ownerUid}_{lowercased email}`
         const userEmail = user.email.toLowerCase()
-        const inviteSnap = await getDocs(query(
-          collection(db, 'invites'),
-          where('registryOwnerUid', '==', ownerUid),
-        ))
-        const validInvite = inviteSnap.docs
-          .map(d => d.data())
-          .find(d => d.invitedEmail === userEmail && d.status !== 'declined')
+        const inviteId = `${ownerUid}_${userEmail}`
+        const inviteSnap = await getDoc(doc(db, 'invites', inviteId))
 
-        if (!validInvite) {
+        if (!inviteSnap.exists() || inviteSnap.data().status === 'declined') {
           setLoading(false)
           return
         }
         setHasAccess(true)
-        setOwnerName(validInvite.ownerName || '')
+        setOwnerName(inviteSnap.data().ownerName || '')
       }
 
       // Load owner's active assets

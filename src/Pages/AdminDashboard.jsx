@@ -42,6 +42,8 @@ function StatCard({ label, value }) {
 }
 
 function AdminDashboard({ user }) {
+  const allowed = isAdmin(user)
+
   const [loading, setLoading]   = useState(true)
   const [users, setUsers]       = useState([])
   const [assets, setAssets]     = useState([])
@@ -51,12 +53,10 @@ function AdminDashboard({ user }) {
   const [apiTest, setApiTest]   = useState(null)
   const [apiTesting, setApiTesting] = useState(false)
 
-  // Access guard
-  if (!isAdmin(user)) {
-    return <Navigate to="/" replace />
-  }
-
   useEffect(() => {
+    // Defense in depth: never query the cross-user collections
+    // unless the current user is the configured admin.
+    if (!allowed) return
     const load = async () => {
       try {
         const [usersSnap, assetsSnap, invitesSnap] = await Promise.all([
@@ -74,7 +74,7 @@ function AdminDashboard({ user }) {
       }
     }
     load()
-  }, [])
+  }, [allowed])
 
   // ── Computed metrics ──
   const assetCountByUid = useMemo(() => {
@@ -177,6 +177,10 @@ function AdminDashboard({ user }) {
       setApiTesting(false)
     }
   }
+
+  // Access guard — placed AFTER all hooks to satisfy rules-of-hooks.
+  // Non-admin users are silently redirected to home.
+  if (!allowed) return <Navigate to="/" replace />
 
   if (loading) return <div className="page"><p className="placeholder-text">Loading admin data...</p></div>
 

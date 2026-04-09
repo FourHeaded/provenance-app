@@ -24,8 +24,15 @@ function App() {
   const [authReady, setAuthReady]             = useState(false)
   const [onboardingChecked, setOnboardingChecked] = useState(false)
   const [showOnboarding, setShowOnboarding]   = useState(false)
+  const [theme, setTheme]                     = useState(() => localStorage.getItem('prov-theme') || 'dark')
   const location = useLocation()
   const navigate = useNavigate()
+
+  // Apply theme to <html> and persist
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+    localStorage.setItem('prov-theme', theme)
+  }, [theme])
 
   // Auth listener
   useEffect(() => {
@@ -139,7 +146,7 @@ function App() {
           <Route path="/registry"            element={<Registry user={user} />} />
           <Route path="/add"                 element={<AddAsset user={user} />} />
           <Route path="/documents"           element={<Documents user={user} />} />
-          <Route path="/profile"             element={<Profile user={user} />} />
+          <Route path="/profile"             element={<Profile user={user} theme={theme} setTheme={setTheme} />} />
           <Route path="/archive"             element={<Archive user={user} />} />
           <Route path="/asset/:id"           element={<AssetDetailPage />} />
           <Route path="/reports"             element={<Reports user={user} />} />

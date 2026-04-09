@@ -4,20 +4,20 @@ import { signOut } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { isAdmin } from '../admin'
 import {
-  collection, addDoc, getDocs, deleteDoc,
+  collection, getDocs, setDoc, deleteDoc,
   query, where, doc, serverTimestamp
 } from 'firebase/firestore'
-
-const isPremium = false
 
 const RELATIONSHIPS = ['Spouse', 'Child', 'Sibling', 'Parent', 'Attorney', 'Executor', 'Friend', 'Other']
 
 const INVITE_URL = (ownerUid) => `https://provenance-510ad.web.app/shared/${ownerUid}`
 
-function Profile({ user }) {
+function Profile({ user, theme, setTheme }) {
   const navigate = useNavigate()
+  const [userSettings, setUserSettings] = useState(null)
   const [invites, setInvites] = useState([])
   const [loadingInvites, setLoadingInvites] = useState(true)
+  const isPremium = userSettings?.isPremium || false
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', relationship: '' })
   const [submitting, setSubmitting] = useState(false)
@@ -28,11 +28,14 @@ function Profile({ user }) {
 
   useEffect(() => {
     const load = async () => {
-      const snap = await getDocs(query(
-        collection(db, 'invites'),
-        where('registryOwnerUid', '==', user.uid),
-      ))
-      setInvites(snap.docs.map(d => ({ id: d.id, ...d.data() })))
+      const [invitesSnap, settingsSnap] = await Promise.all([
+        getDocs(query(collection(db, 'invites'), where('registryOwnerUid', '==', user.uid))),
+        getDocs(query(collection(db, 'userSettings'), where('uid', '==', user.uid))),
+      ])
+      setInvites(invitesSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+      if (!settingsSnap.empty) {
+        setUserSettings(settingsSnap.docs[0].data())
+      }
       setLoadingInvites(false)
     }
     load()
@@ -44,24 +47,29 @@ function Profile({ user }) {
     setSubmitting(true)
     const expiresAt = new Date()
     expiresAt.setDate(expiresAt.getDate() + 30)
+    const invitedEmail = inviteForm.email.toLowerCase().trim()
     const newInvite = {
       registryOwnerUid: user.uid,
       ownerName: user.displayName,
       invitedName: inviteForm.name,
-      invitedEmail: inviteForm.email.toLowerCase().trim(),
+      invitedEmail,
       relationship: inviteForm.relationship,
       status: 'pending',
       createdAt: serverTimestamp(),
       expiresAt: expiresAt.toISOString(),
     }
-    const docRef = await addDoc(collection(db, 'invites'), newInvite)
-    const saved = { id: docRef.id, ...newInvite, createdAt: new Date() }
-    setInvites(prev => [saved, ...prev])
+    // Deterministic doc ID so the security rule can construct the path.
+    // Format: `{registryOwnerUid}_{lowercased invitedEmail}`
+    const inviteId = `${user.uid}_${invitedEmail}`
+    await setDoc(doc(db, 'invites', inviteId), newInvite)
+    const saved = { id: inviteId, ...newInvite, createdAt: new Date() }
+    // Re-inviting the same email overwrites the existing invite, so dedupe by ID
+    setInvites(prev => [saved, ...prev.filter(i => i.id !== inviteId)])
     setInviteForm({ name: '', email: '', relationship: '' })
     setShowInviteForm(false)
     setSubmitting(false)
     // Auto-copy the link
-    handleCopyLink(docRef.id)
+    handleCopyLink(inviteId)
   }
 
   const handleRevokeInvite = async (inviteId) => {
@@ -236,6 +244,18 @@ function Profile({ user }) {
           </button>
         </div>
       )}
+
+      {/* Appearance */}
+      <div className="profile-section">
+        <div className="section-label">Appearance</div>
+        <div
+          className="profile-row profile-row--clickable"
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        >
+          <span>{theme === 'dark' ? '☾ Dark mode' : '☀ Light mode'}</span>
+          <span className="profile-row-value">{theme === 'dark' ? 'On' : 'Off'}</span>
+        </div>
+      </div>
 
       {/* Legal */}
       <div className="profile-section profile-legal">

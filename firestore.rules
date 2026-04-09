@@ -11,13 +11,25 @@ service cloud.firestore {
              && request.auth.uid == '6Oqu1jFasvYOKauEqotgCMeQH7o1';
     }
 
+    // ── Invite check ───────────────────────────────────────────────
+    // Returns true if the current user has a non-declined invite from
+    // the given owner. Relies on deterministic invite document IDs of
+    // the form `{registryOwnerUid}_{lowercased invitedEmail}`.
+    function hasValidInvite(ownerUid) {
+      let inviteId = ownerUid + '_' + request.auth.token.email;
+      return exists(/databases/$(database)/documents/invites/$(inviteId)) &&
+        get(/databases/$(database)/documents/invites/$(inviteId)).data.status != 'declined';
+    }
+
     // Assets
     match /assets/{assetId} {
       // Admin: full read access for the dashboard
       allow read: if isAdmin();
 
-      // Any authenticated user can read (for shared registry view)
-      allow read: if request.auth != null;
+      // Owner OR a beneficiary with a valid (non-declined) invite from the owner
+      allow read: if request.auth != null
+                  && (request.auth.uid == resource.data.uid
+                      || hasValidInvite(resource.data.uid));
 
       // Owner has full write access
       allow write: if request.auth != null

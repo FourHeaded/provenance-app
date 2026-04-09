@@ -1,5 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap');
-
 * {
   margin: 0;
   padding: 0;
@@ -7,20 +5,49 @@
 }
 
 :root {
-  --surface-0: #0D0D0D;
-  --surface-1: #1A1A1A;
-  --surface-2: #2A2A2A;
-  --text-primary: #F6F4EF;
-  --text-secondary: #C7C7C7;
-  --text-faint: #555;
-  --accent-gold: #D4A94E;
-  --accent-gold-light: #E8C06A;
-  --accent-gold-dark: #A67E2D;
-  --accent-gold-glow: rgba(212, 169, 78, 0.12);
-  --border-soft: #2F2F2F;
-  --border-focus: #D4A94E;
+  --surface-0: #111009;
+  --surface-1: #1C1A17;
+  --surface-2: #2A2720;
+  --surface-3: #333028;
+  --text-primary: #EDE9E1;
+  --text-secondary: #A09890;
+  --text-faint: #5A5650;
+  --accent-gold: #C9A96E;
+  --accent-gold-light: #DFC088;
+  --accent-gold-dark: #A07840;
+  --accent-gold-glow: rgba(201, 169, 110, 0.10);
+  --accent-slate: #7A9BAE;
+  --accent-slate-light: #9BBCCE;
+  --accent-slate-glow: rgba(122, 155, 174, 0.12);
+  --border-soft: #3A3630;
+  --border-faint: #2A2720;
+  --border-focus: #7A9BAE;
+  --navy: #1A2D52;
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.5);
   --shadow-md: 0 6px 24px rgba(0,0,0,0.6);
+}
+
+[data-theme="light"] {
+  --surface-0: #F2EFE8;
+  --surface-1: #FFFFFF;
+  --surface-2: #EAE7DF;
+  --surface-3: #E0DDD5;
+  --text-primary: #1C1A17;
+  --text-secondary: #5A5650;
+  --text-faint: #A09890;
+  --accent-gold: #9A7030;
+  --accent-gold-light: #B8903A;
+  --accent-gold-dark: #7A5520;
+  --accent-gold-glow: rgba(154, 112, 48, 0.10);
+  --accent-slate: #4A7A96;
+  --accent-slate-light: #6A9AB6;
+  --accent-slate-glow: rgba(74, 122, 150, 0.12);
+  --border-soft: #D5D0C8;
+  --border-faint: #E5E0D8;
+  --border-focus: #4A7A96;
+  --navy: #1A2D52;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-md: 0 6px 24px rgba(0,0,0,0.12);
 }
 
 body {
@@ -58,11 +85,12 @@ body {
 }
 
 .page-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 36px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 43px;
+  font-weight: 300;
   color: var(--accent-gold);
   line-height: 1;
+  letter-spacing: 2px;
 }
 
 .page-subtitle {
@@ -74,20 +102,21 @@ body {
 
 /* ── Section Label ── */
 .section-label {
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
-  font-weight: 400;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 300;
   font-style: italic;
   color: var(--text-secondary);
   margin-bottom: 16px;
+  letter-spacing: 1px;
 }
 
 /* ── Placeholder ── */
 .placeholder-text {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   color: var(--text-faint);
-  font-size: 15px;
+  font-size: 18px;
   padding: 32px 0;
   text-align: center;
   border: 1px dashed var(--border-soft);
@@ -104,12 +133,12 @@ button {
 
 .btn-primary {
   height: 52px;
-  background: linear-gradient(135deg, var(--accent-gold-light) 0%, var(--accent-gold) 50%, var(--accent-gold-dark) 100%);
-  color: #0D0D0D;
+  background: var(--accent-gold);
+  color: var(--surface-0);
   padding: 0 32px;
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.12em;
+  letter-spacing: 1px;
   text-transform: uppercase;
   border-radius: 12px;
   box-shadow: 0 2px 12px var(--accent-gold-glow);
@@ -117,8 +146,8 @@ button {
 }
 
 .btn-primary:hover {
-  filter: brightness(1.08);
-  box-shadow: 0 4px 20px rgba(212, 169, 78, 0.3);
+  background: var(--accent-gold-light);
+  box-shadow: 0 4px 20px var(--accent-gold-glow);
   transform: translateY(-1px);
 }
 
@@ -136,9 +165,11 @@ button {
   border-radius: 8px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
 .btn-ghost:hover {
+  background: var(--surface-2);
   border-color: var(--accent-gold);
   color: var(--accent-gold);
 }
@@ -184,11 +215,12 @@ button {
 }
 
 .login-screen h1 {
-  font-family: 'Playfair Display', serif;
-  font-size: 64px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 76px;
+  font-weight: 400;
   color: var(--accent-gold);
   line-height: 1;
+  letter-spacing: 2px;
 }
 
 .login-tagline {
@@ -235,7 +267,7 @@ button {
 
 .asset-form input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .asset-form input::placeholder {
@@ -332,7 +364,7 @@ button {
 }
 
 .custom-category-input input:focus {
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .selected-category {
@@ -418,11 +450,12 @@ button {
   gap: 16px;
   padding: 20px 24px;
   margin-bottom: 8px;
-  background: var(--surface-0);
+  background: var(--surface-1);
   border: 1px solid var(--border-soft);
+  border-left: 2px solid transparent;
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  transition: border-left 0.15s ease, border-color 0.2s, box-shadow 0.2s, transform 0.2s;
   cursor: pointer;
 }
 
@@ -431,8 +464,8 @@ button {
 }
 
 .asset-card:hover {
-  border-color: var(--accent-gold);
-  box-shadow: var(--shadow-md), 0 0 0 1px var(--accent-gold-glow);
+  border-left: 2px solid var(--accent-gold);
+  box-shadow: var(--shadow-md);
   transform: translateY(-1px);
 }
 
@@ -461,7 +494,7 @@ button {
 
 .registry-search:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .registry-search::-webkit-search-cancel-button {
@@ -491,15 +524,15 @@ button {
 }
 
 .asset-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 17px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px;
   color: var(--text-primary);
-  font-weight: 400;
+  font-weight: 500;
 }
 
 .asset-category {
   font-size: 10px;
-  color: var(--accent-gold);
+  color: var(--accent-slate);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   margin-top: 4px;
@@ -527,10 +560,10 @@ button {
 }
 
 .empty-state {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-style: italic;
   color: var(--text-faint);
-  font-size: 15px;
+  font-size: 18px;
   padding: 32px 0;
   text-align: center;
   border: 1px dashed var(--border-soft);
@@ -579,10 +612,11 @@ button {
 }
 
 .detail-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 42px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 50px;
+  font-weight: 400;
   color: var(--text-primary);
+  letter-spacing: 1px;
   line-height: 1.1;
   margin-bottom: 12px;
 }
@@ -618,9 +652,9 @@ button {
 }
 
 .detail-placeholder {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Cormorant Garamond', serif;
   font-style: italic;
-  font-size: 14px;
+  font-size: 17px;
   color: var(--text-faint);
   text-align: center;
   padding: 16px 0;
@@ -670,12 +704,12 @@ button {
 }
 
 .edit-input:focus {
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .edit-input-large {
-  font-family: 'Playfair Display', serif;
-  font-size: 32px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
   padding: 8px 12px;
   margin-bottom: 8px;
 }
@@ -714,7 +748,7 @@ button {
 }
 
 .edit-textarea:focus {
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 /* ── Delete Zone ── */
@@ -797,6 +831,7 @@ button {
 .stat-card {
   background: var(--surface-1);
   border: 1px solid var(--border-soft);
+  border-top: 2px solid rgba(201, 169, 110, 0.4);
   border-radius: 16px;
   padding: 24px;
   box-shadow: var(--shadow-md);
@@ -804,10 +839,11 @@ button {
 }
 
 .stat-value {
-  font-family: 'Playfair Display', serif;
-  font-size: 32px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 400;
   color: var(--accent-gold);
+  letter-spacing: 1px;
   line-height: 1;
   margin-bottom: 8px;
 }
@@ -948,8 +984,8 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Playfair Display', serif;
-  font-size: 28px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 34px;
   color: var(--accent-gold);
 }
 
@@ -961,9 +997,9 @@ button {
 }
 
 .profile-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 500;
   color: var(--text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -990,6 +1026,25 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+}
+
+.profile-row--clickable {
+  cursor: pointer;
+  padding: 6px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: color 0.15s;
+}
+
+.profile-row--clickable:hover {
+  color: var(--accent-gold);
+}
+
+.profile-row-value {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .profile-row-label {
@@ -1585,7 +1640,7 @@ button {
 .invite-input:focus,
 .invite-select:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .invite-select option {
@@ -1678,16 +1733,18 @@ button {
 }
 
 .invite-status--pending {
-  background: var(--surface-0);
-  color: var(--text-faint);
-  border: 1px solid var(--border-soft);
+  background: var(--accent-slate-glow);
+  color: var(--accent-slate);
+  border: 1px solid var(--accent-slate);
 }
 
 .invite-status--accepted {
-  background: var(--accent-gold-glow);
-  color: var(--accent-gold);
-  border: 1px solid var(--accent-gold-dark);
+  background: rgba(76, 175, 80, 0.12);
+  color: #6dbb70;
+  border: 1px solid rgba(76, 175, 80, 0.4);
 }
+
+/* Original .invite-status--accepted overridden by the green rule above */
 
 .invite-status--declined {
   background: rgba(192, 57, 43, 0.1);
@@ -1712,8 +1769,8 @@ button {
 }
 
 .invite-action-btn:hover {
-  border-color: var(--accent-gold);
-  color: var(--accent-gold);
+  border-color: var(--accent-slate);
+  color: var(--accent-slate);
 }
 
 .invite-action-btn--danger:hover {
@@ -1746,10 +1803,11 @@ button {
 }
 
 .shared-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 32px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 400;
   color: var(--accent-gold);
+  letter-spacing: 2px;
   line-height: 1;
 }
 
@@ -1809,9 +1867,9 @@ button {
 }
 
 .shared-asset-name {
-  font-family: 'Playfair Display', serif;
-  font-size: 20px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 24px;
+  font-weight: 500;
   color: var(--text-primary);
   line-height: 1.2;
 }
@@ -1903,10 +1961,11 @@ button {
 }
 
 .shared-no-access-title {
-  font-family: 'Playfair Display', serif;
-  font-size: 28px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 34px;
+  font-weight: 400;
   color: var(--text-primary);
+  letter-spacing: 1px;
 }
 
 .shared-no-access-text {
@@ -2039,7 +2098,7 @@ button {
 
 .login-input:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .login-error {
@@ -2183,17 +2242,18 @@ button {
 }
 
 .ob-wordmark {
-  font-family: 'Playfair Display', serif;
-  font-size: 56px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 67px;
+  font-weight: 400;
   color: var(--accent-gold);
+  letter-spacing: 2px;
   line-height: 1;
   letter-spacing: -0.01em;
 }
 
 .ob-tagline {
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
   font-style: italic;
   color: var(--text-primary);
   line-height: 1.4;
@@ -2210,10 +2270,11 @@ button {
 }
 
 .ob-heading {
-  font-family: 'Playfair Display', serif;
-  font-size: 28px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 34px;
+  font-weight: 400;
   color: var(--text-primary);
+  letter-spacing: 1px;
   line-height: 1.2;
 }
 
@@ -2280,9 +2341,9 @@ button {
   border: 1px solid var(--accent-gold-dark);
   background: var(--accent-gold-glow);
   color: var(--accent-gold);
-  font-family: 'Playfair Display', serif;
-  font-size: 15px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2421,8 +2482,8 @@ button {
 }
 
 .edoc-category-label {
-  font-family: 'Playfair Display', serif;
-  font-size: 16px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 19px;
   font-weight: 500;
   color: var(--text-primary);
   letter-spacing: 0.01em;
@@ -2878,9 +2939,9 @@ button {
 }
 
 .shared-docs-heading {
-  font-family: 'Playfair Display', serif;
-  font-size: 22px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 500;
   color: var(--text-primary);
 }
 
@@ -3127,7 +3188,7 @@ button {
 .edoc-select:focus,
 .edoc-textarea:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 .edoc-textarea {
@@ -3257,7 +3318,7 @@ button {
 
 .admin-search:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
 }
 
 /* ── Tables ── */
@@ -3539,9 +3600,9 @@ button {
 }
 
 .legal-content h2 {
-  font-family: 'Playfair Display', serif;
-  font-size: 18px;
-  font-weight: 600;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 500;
   color: var(--accent-gold);
   margin-top: 28px;
   margin-bottom: 10px;
@@ -3667,4 +3728,50 @@ button {
 
 .profile-legal-link:hover {
   color: var(--accent-gold);
+}
+
+/* ── Logo ── */
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  line-height: 1;
+}
+
+.logo--icon {
+  gap: 0;
+}
+
+.logo--compact {
+  gap: 12px;
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: flex-start;
+}
+
+.logo-wordmark {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 34px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 1.5px;
+  line-height: 1;
+}
+
+.logo-wordmark--compact {
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+
+.logo-tagline {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--accent-gold);
+  letter-spacing: 4px;
+  text-transform: uppercase;
 }
