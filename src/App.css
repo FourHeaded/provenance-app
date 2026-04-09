@@ -1171,6 +1171,264 @@ button {
   font-style: italic;
 }
 
+/* ── Lightbox ── */
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  cursor: zoom-out;
+}
+
+.lightbox-img {
+  max-width: 100%;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 8px 48px rgba(0, 0, 0, 0.8);
+  cursor: default;
+}
+
+.lightbox-close {
+  position: fixed;
+  top: 20px;
+  right: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+  font-size: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s;
+  z-index: 1001;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+/* ── Document Vault ── */
+.vault-subsection {
+  margin-bottom: 24px;
+}
+
+.vault-subsection:last-child {
+  margin-bottom: 0;
+}
+
+.vault-subsection-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.vault-subsection-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.vault-add-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--accent-gold);
+  background: transparent;
+  border: 1px solid var(--accent-gold-dark);
+  border-radius: 6px;
+  padding: 4px 12px;
+  height: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vault-add-btn:hover {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+}
+
+.vault-add-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.vault-empty {
+  background: var(--surface-1);
+  border: 1px dashed var(--border-soft);
+  border-radius: 10px;
+  padding: 20px;
+  text-align: center;
+}
+
+.vault-empty p {
+  font-size: 13px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* ── Photo Grid ── */
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.photo-grid-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  cursor: zoom-in;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.photo-grid-item:hover {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 1px var(--accent-gold-glow);
+}
+
+.photo-grid-item:hover .photo-delete-btn {
+  opacity: 1;
+}
+
+.photo-grid-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text-primary);
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background 0.2s;
+  line-height: 1;
+}
+
+.photo-delete-btn:hover {
+  background: rgba(192, 57, 43, 0.85);
+  border-color: transparent;
+}
+
+/* ── Document List ── */
+.doc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.doc-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.doc-row:hover {
+  border-color: var(--accent-gold);
+}
+
+.doc-row-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  padding: 12px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.doc-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.doc-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.doc-date {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.doc-open {
+  font-size: 14px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  margin-left: auto;
+  transition: color 0.2s;
+}
+
+.doc-row:hover .doc-open {
+  color: var(--accent-gold);
+}
+
+.doc-delete-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 100%;
+  min-height: 44px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid var(--border-soft);
+  color: var(--text-faint);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.doc-delete-btn:hover {
+  background: rgba(192, 57, 43, 0.12);
+  color: #e74c3c;
+}
+
 /* ── Add Asset notes layout ── */
 .add-asset-notes-header {
   margin-bottom: 16px;
