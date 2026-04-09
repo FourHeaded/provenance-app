@@ -8,6 +8,7 @@ const DEFAULT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/s
 function Registry({ user }) {
   const [assets, setAssets] = useState([])
   const [activeFilters, setActiveFilters] = useState([])
+  const [search, setSearch] = useState('')
   const navigate = useNavigate()
 
   const loadAssets = async () => {
@@ -30,9 +31,16 @@ function Registry({ user }) {
 
   const usedCategories = [...new Set(assets.map(a => a.category).filter(Boolean))]
 
-  const filteredAssets = activeFilters.length === 0
-    ? assets
-    : assets.filter(a => activeFilters.includes(a.category))
+  const searchTerm = search.trim().toLowerCase()
+
+  const filteredAssets = assets.filter(a => {
+    const matchesFilter = activeFilters.length === 0 || activeFilters.includes(a.category)
+    const matchesSearch = !searchTerm
+      || a.name?.toLowerCase().includes(searchTerm)
+      || a.category?.toLowerCase().includes(searchTerm)
+      || a.description?.toLowerCase().includes(searchTerm)
+    return matchesFilter && matchesSearch
+  })
 
   return (
     <div className="page">
@@ -41,6 +49,16 @@ function Registry({ user }) {
       </div>
 
       <div className="asset-list">
+        <div className="registry-search-wrap">
+          <input
+            className="registry-search"
+            type="search"
+            placeholder="Search by name, category, or description…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+
         {usedCategories.length > 0 && (
           <div className="filter-bar">
             {usedCategories.map(cat => (
@@ -64,8 +82,8 @@ function Registry({ user }) {
 
         {filteredAssets.length === 0 ? (
           <p className="empty-state">
-            {activeFilters.length > 0
-              ? 'No assets match the selected filters.'
+            {searchTerm || activeFilters.length > 0
+              ? 'No assets match your search.'
               : 'No assets yet. Tap + to add your first item.'}
           </p>
         ) : (
