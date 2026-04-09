@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db, storage } from '../firebase'
-import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
+import { collection, addDoc, getDocs, query, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { PRESET_CATEGORIES } from '../categories'
 import '../ProvenanceNotes.css'
@@ -15,9 +15,49 @@ const NOTE_SECTIONS = [
   { key: 'legacy',  label: 'Legacy',  placeholder: 'Who should have this, and what should they know?' },
 ]
 
+// Mirrors the constants in AssetDetailPage so the create and edit
+// flows show identical pill rows for the new field groups.
+const CONDITION_OPTIONS   = ['Excellent', 'Good', 'Fair', 'Poor', 'Unknown']
+const ACQUISITION_OPTIONS = ['Purchased', 'Inherited', 'Gifted', 'Commissioned', 'Other']
+
+function priceLabel(acquisitionType) {
+  return acquisitionType === 'Inherited' || acquisitionType === 'Gifted'
+    ? 'Appraised at acquisition'
+    : 'Purchase price'
+}
+
+function numericOrEmpty(v) {
+  if (v === '' || v == null) return ''
+  const n = parseFloat(v)
+  return isNaN(n) ? '' : n
+}
+
+function summarize(parts) {
+  return parts.filter(Boolean).join(' · ')
+}
+
 function AddAsset({ user }) {
   const [form, setForm] = useState({ name: '', category: '', description: '', value: '' })
   const [notes, setNotes] = useState({ origin: '', history: '', meaning: '', legacy: '' })
+  const [details, setDetails] = useState({ condition: '', location: '' })
+  const [ownership, setOwnership] = useState({
+    acquisitionType: '',
+    acquiredFrom:    '',
+    acquiredDate:    '',
+    purchasePrice:   '',
+  })
+  const [insurance, setInsurance] = useState({
+    insurer:        '',
+    policyNumber:   '',
+    coverageAmount: '',
+    lastAppraised:  '',
+    appraisedBy:    '',
+  })
+  const [openSections, setOpenSections] = useState({
+    details:   false,
+    ownership: false,
+    insurance: false,
+  })
   const [customCategories, setCustomCategories] = useState([])
   const [customCategoryInput, setCustomCategoryInput] = useState('')
   const [showCustomInput, setShowCustomInput] = useState(false)
@@ -26,6 +66,8 @@ function AddAsset({ user }) {
   const [analyzing, setAnalyzing] = useState(false)
   const fileInputRef = useRef(null)
   const navigate = useNavigate()
+
+  const toggleSection = (key) => setOpenSections(s => ({ ...s, [key]: !s[key] }))
 
   const allCategories = [...PRESET_CATEGORIES, ...customCategories]
 
@@ -174,8 +216,12 @@ The JSON must have exactly these fields:
     const docRef = await addDoc(collection(db, 'assets'), {
       ...form,
       notes,
+      details,
+      ownership: { ...ownership, purchasePrice: numericOrEmpty(ownership.purchasePrice) },
+      insurance: { ...insurance, coverageAmount: numericOrEmpty(insurance.coverageAmount) },
       uid: user.uid,
-      createdAt: new Date(),
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
     })
     if (photoFile) {
       const storagePath = `users/${user.uid}/assets/${docRef.id}/photos/hero`
@@ -337,6 +383,198 @@ The JSON must have exactly these fields:
             </div>
           ))}
         </div>
+
+        {/* ── Details ── */}
+        {(() => {
+          const summary = summarize([details.condition, details.location])
+          const open = openSections.details
+          const activeCondition = details.condition || 'Unknown'
+          return (
+            <div className="detail-section">
+              <button type="button" className="detail-section-toggle" onClick={() => toggleSection('details')}>
+                <h2 className="section-label">Details</h2>
+                <span className="detail-section-summary">
+                  {summary || <span className="detail-section-empty">Add details</span>}
+                </span>
+                <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+              </button>
+              {open && (
+                <div className="detail-card detail-fields">
+                  <div className="detail-field">
+                    <div className="detail-field-label">Condition</div>
+                    <div className="pill-row">
+                      {CONDITION_OPTIONS.map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          className={`pill ${activeCondition === opt ? 'pill--active' : ''}`}
+                          onClick={() => setDetails(d => ({ ...d, condition: opt === 'Unknown' ? '' : opt }))}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Location</div>
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={details.location}
+                      onChange={e => setDetails(d => ({ ...d, location: e.target.value }))}
+                      placeholder="e.g. Safe deposit box — First Bank"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
+        {/* ── Ownership ── */}
+        {(() => {
+          const summary = summarize([
+            ownership.acquisitionType,
+            ownership.acquiredDate || null,
+          ])
+          const open = openSections.ownership
+          const activeType = ownership.acquisitionType
+          const currentPriceLabel = priceLabel(ownership.acquisitionType)
+          return (
+            <div className="detail-section">
+              <button type="button" className="detail-section-toggle" onClick={() => toggleSection('ownership')}>
+                <h2 className="section-label">Ownership</h2>
+                <span className="detail-section-summary">
+                  {summary || <span className="detail-section-empty">Add details</span>}
+                </span>
+                <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+              </button>
+              {open && (
+                <div className="detail-card detail-fields">
+                  <div className="detail-field">
+                    <div className="detail-field-label">Acquisition type</div>
+                    <div className="pill-row">
+                      {ACQUISITION_OPTIONS.map(opt => (
+                        <button
+                          key={opt}
+                          type="button"
+                          className={`pill ${activeType === opt ? 'pill--active' : ''}`}
+                          onClick={() => setOwnership(o => ({ ...o, acquisitionType: opt }))}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Acquired from</div>
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={ownership.acquiredFrom}
+                      onChange={e => setOwnership(o => ({ ...o, acquiredFrom: e.target.value }))}
+                      placeholder="Person, dealer, or estate"
+                    />
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Acquired date</div>
+                    <input
+                      type="date"
+                      className="detail-field-input"
+                      value={ownership.acquiredDate}
+                      onChange={e => setOwnership(o => ({ ...o, acquiredDate: e.target.value }))}
+                    />
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">{currentPriceLabel}</div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="detail-field-input"
+                      value={ownership.purchasePrice}
+                      onChange={e => setOwnership(o => ({ ...o, purchasePrice: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
+
+        {/* ── Insurance & Appraisal ── */}
+        {(() => {
+          const summary = summarize([
+            insurance.insurer,
+            insurance.coverageAmount ? `$${insurance.coverageAmount} coverage` : null,
+          ])
+          const open = openSections.insurance
+          return (
+            <div className="detail-section">
+              <button type="button" className="detail-section-toggle" onClick={() => toggleSection('insurance')}>
+                <h2 className="section-label">Insurance & Appraisal</h2>
+                <span className="detail-section-summary">
+                  {summary || <span className="detail-section-empty">Add details</span>}
+                </span>
+                <span className="detail-section-chevron">{open ? '∧' : '∨'}</span>
+              </button>
+              {open && (
+                <div className="detail-card detail-fields">
+                  <div className="detail-field">
+                    <div className="detail-field-label">Insurer</div>
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={insurance.insurer}
+                      onChange={e => setInsurance(i => ({ ...i, insurer: e.target.value }))}
+                      placeholder="Insurance company"
+                    />
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Policy number</div>
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={insurance.policyNumber}
+                      onChange={e => setInsurance(i => ({ ...i, policyNumber: e.target.value }))}
+                      placeholder="Policy #"
+                    />
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Coverage amount</div>
+                    <input
+                      type="number"
+                      step="0.01"
+                      className="detail-field-input"
+                      value={insurance.coverageAmount}
+                      onChange={e => setInsurance(i => ({ ...i, coverageAmount: e.target.value }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Last appraised</div>
+                    <input
+                      type="date"
+                      className="detail-field-input"
+                      value={insurance.lastAppraised}
+                      onChange={e => setInsurance(i => ({ ...i, lastAppraised: e.target.value }))}
+                    />
+                  </div>
+                  <div className="detail-field">
+                    <div className="detail-field-label">Appraised by</div>
+                    <input
+                      type="text"
+                      className="detail-field-input"
+                      value={insurance.appraisedBy}
+                      onChange={e => setInsurance(i => ({ ...i, appraisedBy: e.target.value }))}
+                      placeholder="Appraiser name"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )
+        })()}
 
         <div className="add-asset-submit">
           <button type="submit" className="btn-primary" disabled={analyzing}>
