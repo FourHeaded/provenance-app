@@ -14,23 +14,21 @@ import {
 } from '@react-pdf/renderer'
 
 // ── Font registration ────────────────────────────────────────────
-// React-PDF requires TTF (or WOFF) — not WOFF2, which is what
-// fonts.googleapis.com / fonts.gstatic.com serve. We pull static
-// TTFs directly from the google/fonts repo on GitHub.
+// react-pdf supports woff2 via the gstatic CDN directly.
 Font.register({
   family: 'Cormorant Garamond',
   fonts: [
     {
-      src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/CormorantGaramond-Regular.ttf',
+      src: 'https://fonts.gstatic.com/s/cormorantgaramond/v22/co3YmX5slCNuHLi8bLeY9MK7whWMhyjornFLsS6V7w.woff2',
       fontWeight: 400,
     },
     {
-      src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/CormorantGaramond-Italic.ttf',
+      src: 'https://fonts.gstatic.com/s/cormorantgaramond/v22/co3WmX5slCNuHLi8bLeY9MK7whWMhyjYqXtKxy2osiU2.woff2',
       fontWeight: 400,
       fontStyle: 'italic',
     },
     {
-      src: 'https://raw.githubusercontent.com/google/fonts/main/ofl/cormorantgaramond/CormorantGaramond-Bold.ttf',
+      src: 'https://fonts.gstatic.com/s/cormorantgaramond/v22/co3YmX5slCNuHLi8bLeY9MK7whWMhyjYqnFLsS6V7w.woff2',
       fontWeight: 700,
     },
   ],

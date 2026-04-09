@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
 import { auth, db } from '../firebase'
-import { signOut } from 'firebase/auth'
+import { signOut, updateProfile } from 'firebase/auth'
 import { useNavigate } from 'react-router-dom'
 import { isAdmin } from '../admin'
 import {
-  collection, getDocs, setDoc, deleteDoc,
+  collection, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, doc, serverTimestamp
 } from 'firebase/firestore'
 
@@ -24,6 +24,17 @@ function Profile({ user, theme, setTheme }) {
   const [copiedId, setCopiedId] = useState(null)
   const [revokingId, setRevokingId] = useState(null)
 
+  // Display name editing
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [savingName, setSavingName] = useState(false)
+
+  // Fallback chain: explicit setting > auth profile > email prefix
+  const effectiveDisplayName =
+    userSettings?.displayName ||
+    user.displayName ||
+    (user.email ? user.email.split('@')[0] : 'User')
+
   const handleSignOut = () => signOut(auth)
 
   useEffect(() => {
@@ -34,12 +45,55 @@ function Profile({ user, theme, setTheme }) {
       ])
       setInvites(invitesSnap.docs.map(d => ({ id: d.id, ...d.data() })))
       if (!settingsSnap.empty) {
-        setUserSettings(settingsSnap.docs[0].data())
+        const docSnap = settingsSnap.docs[0]
+        setUserSettings({ id: docSnap.id, ...docSnap.data() })
       }
       setLoadingInvites(false)
     }
     load()
   }, [])
+
+  const handleStartEditName = () => {
+    setNameInput(effectiveDisplayName)
+    setEditingName(true)
+  }
+
+  const handleCancelEditName = () => {
+    setEditingName(false)
+    setNameInput('')
+  }
+
+  const handleSaveName = async () => {
+    const trimmed = nameInput.trim()
+    if (!trimmed) return
+    setSavingName(true)
+    try {
+      // Resolve the userSettings doc id (App.jsx upserts on sign-in, so it
+      // should exist; re-query as a defensive fallback if it's missing).
+      let settingsId = userSettings?.id
+      if (!settingsId) {
+        const snap = await getDocs(query(
+          collection(db, 'userSettings'),
+          where('uid', '==', user.uid),
+        ))
+        if (!snap.empty) settingsId = snap.docs[0].id
+      }
+      if (settingsId) {
+        await updateDoc(doc(db, 'userSettings', settingsId), {
+          displayName: trimmed,
+        })
+      }
+      // Sync to Firebase Auth so other pages reading user.displayName
+      // (e.g. Home greeting) pick up the new value
+      await updateProfile(auth.currentUser, { displayName: trimmed })
+      setUserSettings(prev => ({ ...(prev || {}), id: settingsId, displayName: trimmed }))
+      setEditingName(false)
+    } catch (e) {
+      console.error('Failed to save display name:', e)
+    } finally {
+      setSavingName(false)
+    }
+  }
 
   const handleSendInvite = async (e) => {
     e.preventDefault()
@@ -101,15 +155,57 @@ function Profile({ user, theme, setTheme }) {
       <div className="profile-card">
         <div className="profile-avatar-wrap">
           {user.photoURL ? (
-            <img className="profile-avatar" src={user.photoURL} alt={user.displayName} referrerPolicy="no-referrer" />
+            <img className="profile-avatar" src={user.photoURL} alt={effectiveDisplayName} referrerPolicy="no-referrer" />
           ) : (
             <div className="profile-avatar-fallback">
-              {user.displayName?.charAt(0) ?? '?'}
+              {effectiveDisplayName.charAt(0).toUpperCase()}
             </div>
           )}
         </div>
         <div className="profile-info">
-          <div className="profile-name">{user.displayName}</div>
+          {editingName ? (
+            <div className="profile-name-edit">
+              <input
+                className="profile-name-input"
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') handleSaveName()
+                  if (e.key === 'Escape') handleCancelEditName()
+                }}
+                autoFocus
+              />
+              <div className="profile-name-edit-actions">
+                <button
+                  type="button"
+                  className="profile-name-action"
+                  onClick={handleSaveName}
+                  disabled={savingName || !nameInput.trim()}
+                >
+                  {savingName ? '...' : 'Save'}
+                </button>
+                <button
+                  type="button"
+                  className="profile-name-action profile-name-action--cancel"
+                  onClick={handleCancelEditName}
+                  disabled={savingName}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="profile-name-row">
+              <div className="profile-name">{effectiveDisplayName}</div>
+              <button
+                type="button"
+                className="profile-name-edit-link"
+                onClick={handleStartEditName}
+              >
+                Edit
+              </button>
+            </div>
+          )}
           <div className="profile-email">{user.email}</div>
         </div>
       </div>

@@ -5,13 +5,30 @@ import { collection, getDocs, query, where, doc, updateDoc } from 'firebase/fire
 
 const DEFAULT_IMAGE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%231A1A1A'/%3E%3Crect x='60' y='60' width='80' height='60' rx='4' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Ccircle cx='85' cy='82' r='8' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3Cpolyline points='60,120 85,95 105,112 125,88 140,120' fill='none' stroke='%232F2F2F' stroke-width='2'/%3E%3C/svg%3E"
 
+const SORT_OPTIONS = [
+  { key: 'newest',     label: 'Newest' },
+  { key: 'oldest',     label: 'Oldest' },
+  { key: 'name-asc',   label: 'Name A–Z' },
+  { key: 'name-desc',  label: 'Name Z–A' },
+  { key: 'value-desc', label: 'Value High–Low' },
+  { key: 'value-asc',  label: 'Value Low–High' },
+]
+
 function Registry({ user }) {
   const [assets, setAssets] = useState([])
   const [activeFilters, setActiveFilters] = useState([])
   const [search, setSearch] = useState('')
+  const [sortBy, setSortBy] = useState(() => {
+    if (typeof window === 'undefined') return 'newest'
+    return localStorage.getItem('prov-registry-sort') || 'newest'
+  })
   const [scanBanner, setScanBanner] = useState(null)
   const navigate = useNavigate()
   const location = useLocation()
+
+  useEffect(() => {
+    localStorage.setItem('prov-registry-sort', sortBy)
+  }, [sortBy])
 
   const loadAssets = async () => {
     const q = query(collection(db, 'assets'), where('uid', '==', user.uid))
@@ -66,6 +83,48 @@ function Registry({ user }) {
       || a.category?.toLowerCase().includes(searchTerm)
       || a.description?.toLowerCase().includes(searchTerm)
     return matchesFilter && matchesSearch
+  })
+
+  // Normalize createdAt (Firestore Timestamp | number | string | missing) to millis.
+  // Returns null when missing so we can sort missing entries to the end.
+  const getCreatedMs = (a) => {
+    const c = a.createdAt
+    if (c == null) return null
+    if (typeof c.toMillis === 'function') return c.toMillis()
+    if (typeof c === 'number') return c
+    if (typeof c === 'object' && typeof c.seconds === 'number') return c.seconds * 1000
+    const t = new Date(c).getTime()
+    return Number.isNaN(t) ? null : t
+  }
+
+  const getValueNum = (a) => {
+    const v = a.value
+    if (v == null || v === '') return 0
+    const n = typeof v === 'number' ? v : parseFloat(v)
+    return Number.isNaN(n) ? 0 : n
+  }
+
+  const getNameStr = (a) => (a.name || '').toLowerCase()
+
+  const compareDate = (asc) => (a, b) => {
+    const ta = getCreatedMs(a)
+    const tb = getCreatedMs(b)
+    if (ta == null && tb == null) return 0
+    if (ta == null) return 1   // missing → end
+    if (tb == null) return -1
+    return asc ? ta - tb : tb - ta
+  }
+
+  const sortedAssets = [...filteredAssets].sort((a, b) => {
+    switch (sortBy) {
+      case 'oldest':     return compareDate(true)(a, b)
+      case 'name-asc':   return getNameStr(a).localeCompare(getNameStr(b))
+      case 'name-desc':  return getNameStr(b).localeCompare(getNameStr(a))
+      case 'value-desc': return getValueNum(b) - getValueNum(a)
+      case 'value-asc':  return getValueNum(a) - getValueNum(b)
+      case 'newest':
+      default:           return compareDate(false)(a, b)
+    }
   })
 
   return (
@@ -137,6 +196,19 @@ function Registry({ user }) {
           </button>
         </p>
 
+        <div className="sort-bar">
+          {SORT_OPTIONS.map(opt => (
+            <button
+              key={opt.key}
+              type="button"
+              className={`filter-chip ${sortBy === opt.key ? 'active' : ''}`}
+              onClick={() => setSortBy(opt.key)}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+
         {usedCategories.length > 0 && (
           <div className="filter-bar">
             {usedCategories.map(cat => (
@@ -158,14 +230,14 @@ function Registry({ user }) {
 
         <hr className="divider" />
 
-        {filteredAssets.length === 0 ? (
+        {sortedAssets.length === 0 ? (
           <p className="empty-state">
             {searchTerm || activeFilters.length > 0
               ? 'No assets match your search.'
               : 'No assets yet. Tap + to add your first item.'}
           </p>
         ) : (
-          filteredAssets.map((asset) => (
+          sortedAssets.map((asset) => (
             <div
               className="asset-card"
               key={asset.id}

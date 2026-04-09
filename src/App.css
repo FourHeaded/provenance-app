@@ -392,6 +392,17 @@ button {
   margin: 0 0 16px;
 }
 
+/* ── Sort Bar ── */
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 0.5px solid var(--border-faint);
+}
+
 /* ── Filter Bar ── */
 .filter-bar {
   display: flex;
@@ -1004,6 +1015,97 @@ button {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* ── Display name edit ── */
+.profile-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.profile-name-edit-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-slate);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.profile-name-edit-link:hover {
+  color: var(--accent-slate-light);
+}
+
+.profile-name-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-name-input {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 26px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  padding: 4px 0;
+  outline: none;
+  width: 100%;
+  transition: border-color 0.15s;
+}
+
+.profile-name-input:focus {
+  border-bottom-color: var(--accent-slate);
+}
+
+.profile-name-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.profile-name-action {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--accent-gold);
+  background: transparent;
+  border: 1px solid var(--accent-gold-dark);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.profile-name-action:hover:not(:disabled) {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+}
+
+.profile-name-action--cancel {
+  color: var(--text-faint);
+  border-color: var(--border-soft);
+}
+
+.profile-name-action--cancel:hover:not(:disabled) {
+  background: var(--surface-2);
+  border-color: var(--text-secondary);
+  color: var(--text-secondary);
+}
+
+.profile-name-action:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .profile-email {

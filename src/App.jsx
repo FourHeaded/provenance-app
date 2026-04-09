@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { auth, db } from './firebase'
+import { updateProfile } from 'firebase/auth'
 import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore'
 import AssetDetailPage from './pages/AssetDetailPage'
 import BottomNav from './components/BottomNav'
@@ -89,9 +90,29 @@ function App() {
           const data = existing.data()
           complete = data.onboardingComplete === true
           setIsPremium(data.isPremium === true)
+
+          // If the user has set a custom display name in their settings,
+          // sync it back to Firebase Auth so user.displayName reflects it
+          // across sessions (Home greeting, Profile fallback, etc.)
+          if (data.displayName && data.displayName !== user.displayName) {
+            try {
+              await updateProfile(auth.currentUser, { displayName: data.displayName })
+              // updateProfile mutates auth.currentUser in place; spread to a
+              // new object so React sees a fresh reference and re-renders.
+              setUser({ ...auth.currentUser })
+            } catch (e) {
+              console.error('Failed to sync display name from settings:', e)
+            }
+          }
+
           // Backfill createdAt for legacy users that never had one
           const updates = { ...profileFields }
           if (!data.createdAt) updates.createdAt = new Date().toISOString()
+          // Don't clobber a custom displayName with the auth value —
+          // userSettings is the source of truth once the user has set one.
+          if (data.displayName) {
+            delete updates.displayName
+          }
 
           // If onboarding hasn't been marked complete, double-check whether
           // this is actually a new user. Legacy users from before the
