@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db, storage } from '../firebase'
 import { collection, addDoc, getDocs, query, where, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { PRESET_CATEGORIES } from '../categories'
+import PhotoUploadButtons from '../components/PhotoUploadButtons'
 import '../ProvenanceNotes.css'
 
 const isPremium = true
@@ -64,7 +65,6 @@ function AddAsset({ user }) {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
-  const fileInputRef = useRef(null)
   const navigate = useNavigate()
 
   const toggleSection = (key) => setOpenSections(s => ({ ...s, [key]: !s[key] }))
@@ -129,8 +129,7 @@ function AddAsset({ user }) {
       || ''
   }
 
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files[0]
+  const handlePhotoSelected = async (file) => {
     if (!file) return
 
     const reader = new FileReader()
@@ -261,7 +260,6 @@ The JSON must have exactly these fields:
                       onClick={() => {
                         setPhotoPreview(null)
                         setPhotoFile(null)
-                        fileInputRef.current.value = ''
                       }}
                     >
                       Remove
@@ -269,24 +267,15 @@ The JSON must have exactly these fields:
                   </div>
                 </div>
               ) : (
-                <button
-                  type="button"
-                  className="photo-upload-btn"
-                  onClick={() => fileInputRef.current.click()}
-                >
-                  <span className="photo-upload-icon">⊕</span>
-                  <span className="photo-upload-label">Upload Photo</span>
-                  {isPremium && <span className="photo-upload-hint">AI will identify the item and fill the story</span>}
-                </button>
+                <PhotoUploadButtons
+                  onFileSelected={handlePhotoSelected}
+                  label="Add Photo"
+                  disabled={analyzing}
+                />
               )}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handlePhotoUpload}
-                style={{ display: 'none' }}
-              />
+              {isPremium && !photoPreview && (
+                <p className="photo-upload-hint">AI will identify the item and fill the story</p>
+              )}
             </div>
 
             <input
@@ -355,33 +344,6 @@ The JSON must have exactly these fields:
               disabled={analyzing}
             />
           </div>
-        </div>
-
-        {/* ── Provenance Story ── */}
-        <div className="add-asset-notes-header">
-          <h2 className="section-label">Provenance Story</h2>
-          <p className="add-asset-notes-hint">
-            {analyzing
-              ? 'AI is drafting the story from your photo...'
-              : 'Add the story behind this item. You can always edit later.'}
-          </p>
-        </div>
-
-        <div className="provenance-notes">
-          {NOTE_SECTIONS.map(({ key, label, placeholder }) => (
-            <div key={key} className="note-section">
-              <div className="note-section-header">
-                <h3 className="note-section-label">{label}</h3>
-              </div>
-              <textarea
-                className={`note-textarea${analyzing ? ' note-textarea--analyzing' : ''}`}
-                placeholder={analyzing ? 'Writing...' : placeholder}
-                value={notes[key]}
-                onChange={e => handleNoteChange(key, e.target.value)}
-                disabled={analyzing}
-              />
-            </div>
-          ))}
         </div>
 
         {/* ── Details ── */}
@@ -575,6 +537,33 @@ The JSON must have exactly these fields:
             </div>
           )
         })()}
+
+        {/* ── Provenance Story ── */}
+        <div className="add-asset-notes-header">
+          <h2 className="section-label">Provenance Story</h2>
+          <p className="add-asset-notes-hint">
+            {analyzing
+              ? 'AI is drafting the story from your photo...'
+              : 'Add the story behind this item. You can always edit later.'}
+          </p>
+        </div>
+
+        <div className="provenance-notes">
+          {NOTE_SECTIONS.map(({ key, label, placeholder }) => (
+            <div key={key} className="note-section">
+              <div className="note-section-header">
+                <h3 className="note-section-label">{label}</h3>
+              </div>
+              <textarea
+                className={`note-textarea${analyzing ? ' note-textarea--analyzing' : ''}`}
+                placeholder={analyzing ? 'Writing...' : placeholder}
+                value={notes[key]}
+                onChange={e => handleNoteChange(key, e.target.value)}
+                disabled={analyzing}
+              />
+            </div>
+          ))}
+        </div>
 
         <div className="add-asset-submit">
           <button type="submit" className="btn-primary" disabled={analyzing}>

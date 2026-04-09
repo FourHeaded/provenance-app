@@ -1178,6 +1178,9 @@ button {
   font-size: 11px;
   color: var(--text-faint);
   letter-spacing: 0.03em;
+  text-align: center;
+  margin-top: 8px;
+  font-style: italic;
 }
 
 .photo-preview-wrap {
@@ -4088,4 +4091,85 @@ select.detail-field-input option {
 
 .pill--active:disabled {
   opacity: 1;
+}
+
+/* ── PhotoUploadButtons component ── */
+.photo-upload-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.photo-upload-buttons-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 2px;
+}
+
+.photo-upload-buttons-row {
+  display: flex;
+  gap: 8px;
+}
+
+.photo-upload-btn-camera,
+.photo-upload-btn-library {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  padding: 0 14px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.photo-upload-btn-camera svg,
+.photo-upload-btn-library svg {
+  flex-shrink: 0;
+}
+
+/* Mobile / touch devices: stack vertically and promote "Take Photo" */
+@media (hover: none) and (pointer: coarse) {
+  .photo-upload-buttons-row {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .photo-upload-btn-camera {
+    order: -1;
+    height: 56px;
+    font-size: 13px;
+    background: var(--accent-gold-glow);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold);
+  }
+  .photo-upload-btn-camera:hover {
+    background: var(--accent-gold-glow);
+  }
+  .photo-upload-btn-library {
+    order: 1;
+  }
+}
+
+/* Very small screens — both buttons full width even on desktop */
+@media (max-width: 360px) {
+  .photo-upload-buttons-row {
+    flex-direction: column;
+  }
+}
+
+/* Placement modifiers */
+.detail-hero-upload {
+  margin-top: 12px;
+}
+
+.vault-photo-upload {
+  margin-top: 12px;
 }

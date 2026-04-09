@@ -4,6 +4,7 @@ import { db, storage } from '../firebase'
 import { collection, doc, getDocs, query, updateDoc, where, serverTimestamp } from 'firebase/firestore'
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage'
 import ProvenanceNotes from '../ProvenanceNotes'
+import PhotoUploadButtons from '../components/PhotoUploadButtons'
 
 // ── Constants for the new field groups ──
 const CONDITION_OPTIONS    = ['Excellent', 'Good', 'Fair', 'Poor', 'Unknown']
@@ -102,7 +103,6 @@ function AssetDetailPage() {
     insurance: false,
     beneficiary: false,
   })
-  const photoInputRef = useRef(null)
   const docInputRef = useRef(null)
 
   const [form, setForm] = useState({
@@ -278,8 +278,7 @@ function AssetDetailPage() {
   }
 
   // ── Hero image (thumbnail) ──
-  const handleHeroImageChange = async (e) => {
-    const file = e.target.files[0]
+  const handleHeroPhotoChange = async (file) => {
     if (!file) return
     setUploading(true)
     const storagePath = `${photoBase}/hero`
@@ -290,8 +289,7 @@ function AssetDetailPage() {
   }
 
   // ── Additional photos ──
-  const handleAddPhoto = async (e) => {
-    const file = e.target.files[0]
+  const handleAdditionalPhoto = async (file) => {
     if (!file) return
     setAddingPhoto(true)
     const storagePath = `${photoBase}/${Date.now()}-${file.name}`
@@ -301,7 +299,6 @@ function AssetDetailPage() {
     await updateDoc(doc(db, 'assets', assetId), { additionalImages: updated })
     setAsset({ ...asset, additionalImages: updated })
     setAddingPhoto(false)
-    photoInputRef.current.value = ''
   }
 
   const handleDeletePhoto = async (index) => {
@@ -413,10 +410,12 @@ function AssetDetailPage() {
               alt={asset.name}
               className="detail-thumbnail"
             />
-            <label className="thumbnail-upload-label">
-              {uploading ? 'Saving...' : 'Change photo'}
-              <input type="file" accept="image/*" onChange={handleHeroImageChange} style={{ display: 'none' }} />
-            </label>
+            <PhotoUploadButtons
+              onFileSelected={handleHeroPhotoChange}
+              label={uploading ? 'Saving...' : 'Change Hero Photo'}
+              disabled={uploading}
+              className="detail-hero-upload"
+            />
           </div>
         </div>
       </div>
@@ -431,11 +430,6 @@ function AssetDetailPage() {
             <p className="detail-text">{asset.description || 'No description recorded.'}</p>
           )}
         </div>
-      </div>
-
-      <div className="detail-section">
-        <h2 className="section-label">Provenance Notes</h2>
-        <ProvenanceNotes asset={asset} onUpdate={setAsset} isPremium={false} />
       </div>
 
       {/* ── Details ── */}
@@ -694,6 +688,11 @@ function AssetDetailPage() {
         )
       })()}
 
+      <div className="detail-section">
+        <h2 className="section-label">Provenance Notes</h2>
+        <ProvenanceNotes asset={asset} onUpdate={setAsset} isPremium={false} />
+      </div>
+
       {/* ── Assigned Beneficiary ── */}
       {(() => {
         const assignedInvite = invites.find(i => i.id === asset.assignedBeneficiary)
@@ -749,15 +748,10 @@ function AssetDetailPage() {
         <div className="vault-subsection">
           <div className="vault-subsection-header">
             <span className="vault-subsection-label">Photos</span>
-            <button className="vault-add-btn" onClick={() => photoInputRef.current.click()} disabled={addingPhoto}>
-              {addingPhoto ? 'Uploading...' : '+ Add Photo'}
-            </button>
-            <input ref={photoInputRef} type="file" accept="image/*"
-              onChange={handleAddPhoto} style={{ display: 'none' }} />
           </div>
 
           {galleryImages.length === 0 ? (
-            <div className="vault-empty"><p>No photos yet. Add your first photo above.</p></div>
+            <div className="vault-empty"><p>No photos yet. Add one below.</p></div>
           ) : (
             <div className="photo-grid">
               {galleryImages.map((item, i) => (
@@ -772,6 +766,13 @@ function AssetDetailPage() {
               ))}
             </div>
           )}
+
+          <PhotoUploadButtons
+            onFileSelected={handleAdditionalPhoto}
+            label={addingPhoto ? 'Uploading...' : 'Add Photo'}
+            disabled={addingPhoto}
+            className="vault-photo-upload"
+          />
         </div>
 
         {/* Documents */}
