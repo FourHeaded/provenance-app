@@ -92,6 +92,29 @@ function App() {
           // Backfill createdAt for legacy users that never had one
           const updates = { ...profileFields }
           if (!data.createdAt) updates.createdAt = new Date().toISOString()
+
+          // If onboarding hasn't been marked complete, double-check whether
+          // this is actually a new user. Legacy users from before the
+          // onboarding flow exists never had the flag set, so we'd show
+          // them the "add your first asset" prompt every sign-in even
+          // though they already have a full registry.
+          //
+          // We only run this asset query when the flag is missing, so it
+          // executes at most once per user — after we persist
+          // onboardingComplete: true, future sign-ins skip the check.
+          if (!complete) {
+            const assetSnap = await getDocs(query(
+              collection(db, 'assets'),
+              where('uid', '==', user.uid),
+            ))
+            const hasAssets = assetSnap.docs
+              .some(d => d.data().itemStatus !== 'archived')
+            if (hasAssets) {
+              complete = true
+              updates.onboardingComplete = true
+            }
+          }
+
           await updateDoc(doc(db, 'userSettings', existing.id), updates)
         }
 
