@@ -5,9 +5,8 @@ import { collection, addDoc, getDocs, query, where, doc, updateDoc, serverTimest
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
 import { PRESET_CATEGORIES } from '../categories'
 import PhotoUploadButtons from '../components/PhotoUploadButtons'
+import MultiScanFlow from '../components/MultiScanFlow'
 import '../ProvenanceNotes.css'
-
-const isPremium = true
 
 const NOTE_SECTIONS = [
   { key: 'origin',  label: 'Origin',  placeholder: 'Where did this come from?' },
@@ -37,7 +36,7 @@ function summarize(parts) {
   return parts.filter(Boolean).join(' · ')
 }
 
-function AddAsset({ user }) {
+function AddAsset({ user, isPremium = false }) {
   const [form, setForm] = useState({ name: '', category: '', description: '', value: '' })
   const [notes, setNotes] = useState({ origin: '', history: '', meaning: '', legacy: '' })
   const [details, setDetails] = useState({ condition: '', location: '' })
@@ -65,6 +64,8 @@ function AddAsset({ user }) {
   const [photoFile, setPhotoFile] = useState(null)
   const [photoPreview, setPhotoPreview] = useState(null)
   const [analyzing, setAnalyzing] = useState(false)
+  const [multiScanOpen, setMultiScanOpen] = useState(false)
+  const [showPremiumNote, setShowPremiumNote] = useState(false)
   const navigate = useNavigate()
 
   const toggleSection = (key) => setOpenSections(s => ({ ...s, [key]: !s[key] }))
@@ -267,11 +268,31 @@ The JSON must have exactly these fields:
                   </div>
                 </div>
               ) : (
-                <PhotoUploadButtons
-                  onFileSelected={handlePhotoSelected}
-                  label="Add Photo"
-                  disabled={analyzing}
-                />
+                <>
+                  <PhotoUploadButtons
+                    onFileSelected={handlePhotoSelected}
+                    label="Add Photo"
+                    disabled={analyzing}
+                  />
+                  <button
+                    type="button"
+                    className={`scan-multi-btn ${isPremium ? '' : 'scan-multi-btn--locked'}`}
+                    onClick={() => {
+                      if (isPremium) {
+                        setMultiScanOpen(true)
+                      } else {
+                        setShowPremiumNote(true)
+                      }
+                    }}
+                    disabled={analyzing}
+                  >
+                    {!isPremium && <span className="scan-multi-lock">🔒</span>}
+                    Scan Multiple Items
+                  </button>
+                  {showPremiumNote && !isPremium && (
+                    <p className="scan-premium-note">Multi-scan is a Premium feature.</p>
+                  )}
+                </>
               )}
               {isPremium && !photoPreview && (
                 <p className="photo-upload-hint">AI will identify the item and fill the story</p>
@@ -571,6 +592,17 @@ The JSON must have exactly these fields:
           </button>
         </div>
       </form>
+
+      {multiScanOpen && (
+        <MultiScanFlow
+          user={user}
+          onClose={() => setMultiScanOpen(false)}
+          onComplete={(result) => {
+            setMultiScanOpen(false)
+            navigate('/registry', { state: { scanResult: result } })
+          }}
+        />
+      )}
     </div>
   )
 }

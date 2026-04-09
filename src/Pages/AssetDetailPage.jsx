@@ -307,6 +307,11 @@ function AssetDetailPage() {
     navigate('/registry')
   }
 
+  const handleMarkComplete = async () => {
+    await updateDoc(doc(db, 'assets', assetId), { itemStatus: null })
+    setAsset({ ...asset, itemStatus: null })
+  }
+
   // ── Hero image (thumbnail) ──
   const handleHeroPhotoChange = async (file) => {
     if (!file) return
@@ -498,6 +503,21 @@ function AssetDetailPage() {
       <div className="asset-detail-topbar">
         <button className="btn-back" onClick={() => navigate('/registry')}>← Registry</button>
       </div>
+
+      {asset.itemStatus === 'pending' && (
+        <div className="pending-asset-banner">
+          <span className="pending-asset-banner-text">
+            This item needs a photo and a few more details to be complete.
+          </span>
+          <button
+            type="button"
+            className="pending-asset-banner-link"
+            onClick={handleMarkComplete}
+          >
+            Mark as complete
+          </button>
+        </div>
+      )}
 
       {/* ── Summary card ── */}
       <div className="asset-summary">

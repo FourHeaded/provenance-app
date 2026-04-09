@@ -72,44 +72,44 @@ function computeReadinessScore({ activeAssets, estateDocsByCategory, docsNeeding
   return assetsScore + docsScore + beneScore
 }
 
-function getNextStep({ missingDocCategories, docsNeedingReview, activeBeneficiaries, activeAssets }) {
+function getNextSteps({ missingDocCategories, docsNeedingReview, activeBeneficiaries }) {
+  const steps = []
+
   if (missingDocCategories.length > 0) {
     const missing = missingDocCategories[0]
-    return {
+    steps.push({
       title:    `Add your ${DOC_CATEGORY_LABELS[missing]}`,
       subtitle: 'A required estate document is missing',
       to:       '/documents',
-    }
+    })
   }
+
   if (docsNeedingReview.length > 0) {
     const due = docsNeedingReview[0]
     const label = due.title || DOC_CATEGORY_LABELS[due.categoryId] || 'document'
-    return {
+    steps.push({
       title:    `Review your ${label}`,
       subtitle: 'Annual review recommended',
       to:       '/documents',
-    }
+    })
   }
+
   if (activeBeneficiaries.length === 0) {
-    return {
+    steps.push({
       title:    'Invite a beneficiary',
       subtitle: 'Share your registry with family or your attorney',
       to:       '/profile',
-    }
+    })
   }
-  if (activeAssets.length < 5) {
-    return {
-      title:    'Continue building your registry',
-      subtitle: 'Document a few more items in your estate',
-      to:       '/registry',
-    }
-  }
-  return {
-    title:    'Your estate plan looks strong',
-    subtitle: 'Keep things current as life changes',
-    to:       null,
-    done:     true,
-  }
+
+  // Always include — covers the empty case too
+  steps.push({
+    title:    'Add more assets to your registry',
+    subtitle: 'Document a few more items in your estate',
+    to:       '/add',
+  })
+
+  return steps.slice(0, 3)
 }
 
 // ── Component ──────────────────────────────────────────────────────
@@ -182,11 +182,10 @@ function Home({ user }) {
     (activeBeneficiaries.length === 0 ? 1 : 0) +
     (activeAssets.length < 5        ? 1 : 0)
 
-  const nextStep = getNextStep({
+  const nextSteps = getNextSteps({
     missingDocCategories,
     docsNeedingReview,
     activeBeneficiaries,
-    activeAssets,
   })
 
   const isPremium = userSettings?.isPremium === true
@@ -228,7 +227,7 @@ function Home({ user }) {
             </div>
           </div>
           <div className="home-readiness-scoreblock">
-            <div className="home-readiness-score">{score}</div>
+            <div className="home-readiness-score">{score}%</div>
             <div className="home-readiness-complete">COMPLETE</div>
           </div>
         </div>
@@ -274,23 +273,25 @@ function Home({ user }) {
         </div>
       </div>
 
-      {/* ── Suggested Next Step ── */}
-      <h2 className="section-label">Suggested Next Step</h2>
-      <button
-        type="button"
-        className={`home-next-step ${nextStep.done ? 'home-next-step--done' : ''}`}
-        onClick={() => nextStep.to && navigate(nextStep.to)}
-        disabled={nextStep.done}
-      >
-        <div className={`home-next-step-num ${nextStep.done ? 'home-next-step-num--done' : ''}`}>
-          {nextStep.done ? '✓' : '1'}
-        </div>
-        <div className="home-next-step-text">
-          <div className="home-next-step-title">{nextStep.title}</div>
-          <div className="home-next-step-subtitle">{nextStep.subtitle}</div>
-        </div>
-        {!nextStep.done && <span className="home-next-step-arrow">→</span>}
-      </button>
+      {/* ── Suggested Next Steps ── */}
+      <h2 className="section-label">Suggested Next Steps</h2>
+      <div className="home-next-step-list">
+        {nextSteps.map((step, i) => (
+          <button
+            key={i}
+            type="button"
+            className="home-next-step"
+            onClick={() => navigate(step.to)}
+          >
+            <div className="home-next-step-num">{i + 1}</div>
+            <div className="home-next-step-text">
+              <div className="home-next-step-title">{step.title}</div>
+              <div className="home-next-step-subtitle">{step.subtitle}</div>
+            </div>
+            <span className="home-next-step-arrow">→</span>
+          </button>
+        ))}
+      </div>
 
       {/* ── Your Estate ── */}
       <h2 className="section-label">Your Estate</h2>

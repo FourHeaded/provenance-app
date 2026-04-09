@@ -4643,7 +4643,13 @@ select.detail-field-input option {
   color: var(--text-faint);
 }
 
-/* ── Suggested Next Step ── */
+/* ── Suggested Next Steps ── */
+.home-next-step-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .home-next-step {
   display: flex;
   align-items: center;
@@ -5083,4 +5089,652 @@ select.detail-field-input option {
   border-radius: 20px;
   padding: 4px 10px;
   flex-shrink: 0;
+}
+
+/* ── Multi-Scan: AddAsset entry button ── */
+.scan-multi-btn {
+  margin-top: 8px;
+  width: 100%;
+  height: 44px;
+  background: transparent;
+  border: 1px dashed var(--accent-gold-dark);
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-gold);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.scan-multi-btn:hover:not(:disabled) {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+  border-style: solid;
+}
+
+.scan-multi-btn--locked {
+  opacity: 0.55;
+  border-color: var(--border-soft);
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.scan-multi-btn--locked:hover {
+  background: transparent;
+  border-color: var(--border-soft);
+  border-style: dashed;
+}
+
+.scan-multi-lock {
+  font-size: 11px;
+}
+
+.scan-premium-note {
+  margin-top: 8px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* ── Multi-Scan: full-screen overlay ── */
+.multiscan-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--surface-0);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 20px 40px;
+}
+
+.multiscan-close-btn {
+  position: fixed;
+  top: 16px;
+  right: 18px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 301;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.multiscan-close-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.multiscan-stage {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 480px;
+  margin: 0 auto;
+  gap: 16px;
+}
+
+.multiscan-stage--review {
+  justify-content: flex-start;
+  padding-top: 50px;
+}
+
+/* ── Upload screen ── */
+.multiscan-stage--upload {
+  text-align: center;
+  padding-top: 60px;
+}
+
+.multiscan-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 38px;
+  font-weight: 400;
+  color: var(--accent-gold);
+  letter-spacing: 1.5px;
+  line-height: 1.1;
+}
+
+.multiscan-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+  line-height: 1.6;
+  font-style: italic;
+}
+
+.multiscan-upload-buttons {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.multiscan-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+/* ── Scanning screen ── */
+.multiscan-scanning-pulse {
+  width: 100%;
+  max-width: 360px;
+  border: 2px solid var(--accent-gold);
+  border-radius: 16px;
+  overflow: hidden;
+  animation: pulse-gold 1.4s ease-in-out infinite;
+}
+
+.multiscan-scanning-img {
+  display: block;
+  width: 100%;
+  max-height: 40vh;
+  object-fit: contain;
+  background: var(--surface-1);
+}
+
+@keyframes pulse-gold {
+  0%, 100% {
+    border-color: rgba(201, 169, 110, 0.2);
+    box-shadow: 0 0 0 0 rgba(201, 169, 110, 0.0);
+  }
+  50% {
+    border-color: rgba(201, 169, 110, 0.85);
+    box-shadow: 0 0 24px 4px rgba(201, 169, 110, 0.18);
+  }
+}
+
+.multiscan-status {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  font-style: italic;
+  color: var(--text-secondary);
+  margin-top: 12px;
+}
+
+.multiscan-error {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: center;
+  margin-top: 16px;
+  max-width: 320px;
+}
+
+.multiscan-error-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ── Reviewing screen ── */
+.multiscan-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+
+.multiscan-back-btn {
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.multiscan-back-btn:hover:not(:disabled) {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.multiscan-back-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.multiscan-progress-text {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.multiscan-progress-dots {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex: 1;
+}
+
+.multiscan-progress-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+}
+
+.multiscan-progress-dot--active {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+}
+
+.multiscan-progress-dot--done {
+  background: var(--accent-gold);
+  border-color: var(--accent-gold);
+  opacity: 0.6;
+}
+
+.multiscan-card {
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  padding: 24px;
+  max-width: 480px;
+  width: 100%;
+  margin: 0 auto;
+  position: relative;
+}
+
+.multiscan-card-num {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.multiscan-card-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.multiscan-name-input {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-soft);
+  padding: 8px 0;
+  outline: none;
+  width: 100%;
+  letter-spacing: 0.5px;
+}
+
+.multiscan-name-input:focus {
+  border-bottom-color: var(--accent-slate);
+}
+
+.multiscan-pill-row {
+  margin: 4px 0;
+}
+
+.multiscan-value-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.multiscan-value-prefix {
+  position: absolute;
+  left: 14px;
+  font-size: 14px;
+  color: var(--accent-gold);
+  pointer-events: none;
+}
+
+.multiscan-value-input {
+  width: 100%;
+  height: 42px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  padding: 0 14px 0 24px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.multiscan-value-input:focus {
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
+}
+
+.multiscan-desc-input {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  padding: 12px 14px;
+  outline: none;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+.multiscan-desc-input:focus {
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
+}
+
+.multiscan-prov-toggle {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 8px 0;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: color 0.2s;
+}
+
+.multiscan-prov-toggle:hover {
+  color: var(--accent-gold);
+}
+
+.multiscan-prov-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-faint);
+  padding-left: 12px;
+  border-left: 2px solid var(--border-faint);
+  margin-left: 4px;
+}
+
+.multiscan-prov-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.multiscan-prov-label {
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.multiscan-prov-textarea {
+  width: 100%;
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  padding: 8px 10px;
+  outline: none;
+  resize: vertical;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+.multiscan-prov-textarea:focus {
+  border-color: var(--accent-slate);
+  box-shadow: 0 0 0 2px var(--accent-slate-glow);
+}
+
+.multiscan-card-actions {
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--border-faint);
+  padding-top: 16px;
+}
+
+.multiscan-skip-btn {
+  flex: 1;
+  height: 44px;
+}
+
+.multiscan-save-btn {
+  flex: 1.5;
+  height: 44px;
+}
+
+/* ── Saving screen ── */
+.multiscan-stage--saving {
+  justify-content: center;
+}
+
+.multiscan-spinner {
+  width: 44px;
+  height: 44px;
+  border: 3px solid var(--surface-2);
+  border-top-color: var(--accent-gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Registry: scan success banner ── */
+.scan-banner {
+  background: var(--accent-gold-glow);
+  border: 1px solid var(--accent-gold);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.scan-banner-icon {
+  color: var(--accent-gold);
+  font-size: 16px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.scan-banner-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+}
+
+.scan-banner-close {
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.scan-banner-close:hover {
+  color: var(--accent-gold);
+}
+
+/* ── Registry: pending items section ── */
+.pending-section {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.pending-section-label {
+  color: var(--accent-gold);
+  margin-bottom: 4px;
+}
+
+.pending-section-subtitle {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin-bottom: 12px;
+}
+
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.pending-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-faint);
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.15s;
+}
+
+.pending-row:last-child {
+  border-bottom: none;
+}
+
+.pending-row:hover {
+  background: var(--surface-2);
+}
+
+.pending-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.pending-row-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pending-row-cat {
+  font-size: 10px;
+  color: var(--text-faint);
+  margin-top: 2px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pending-row-action {
+  font-size: 11px;
+  color: var(--accent-gold);
+  flex-shrink: 0;
+  font-style: italic;
+}
+
+.pending-dismiss-all {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--text-faint);
+  text-align: center;
+  margin-top: 10px;
+  padding: 4px 0;
+  cursor: pointer;
+  font-style: italic;
+  transition: color 0.2s;
+}
+
+.pending-dismiss-all:hover {
+  color: var(--text-secondary);
+}
+
+/* ── AssetDetailPage: pending asset banner ── */
+.pending-asset-banner {
+  background: var(--accent-gold-glow);
+  border: 1px solid var(--accent-gold);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pending-asset-banner-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  min-width: 200px;
+}
+
+.pending-asset-banner-link {
+  background: transparent;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-gold);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  text-transform: uppercase;
+  padding: 4px 0;
+  transition: color 0.2s;
+  flex-shrink: 0;
+}
+
+.pending-asset-banner-link:hover {
+  color: var(--accent-gold-light);
+  text-decoration: underline;
 }

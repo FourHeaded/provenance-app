@@ -170,7 +170,7 @@ function App() {
         <Routes>
           <Route path="/"                    element={<Home user={user} />} />
           <Route path="/registry"            element={<Registry user={user} />} />
-          <Route path="/add"                 element={<AddAsset user={user} />} />
+          <Route path="/add"                 element={<AddAsset user={user} isPremium={isPremium} />} />
           <Route path="/documents"           element={<Documents user={user} />} />
           <Route path="/profile"             element={<Profile user={user} theme={theme} setTheme={setTheme} />} />
           <Route path="/archive"             element={<Archive user={user} />} />
