@@ -1921,6 +1921,189 @@ button {
   font-style: italic;
 }
 
+/* ── Login Screen ── */
+.login-social-btns {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 48px;
+  border-radius: 12px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: filter 0.2s, transform 0.15s;
+  border: none;
+}
+
+.login-social-btn:hover:not(:disabled) {
+  filter: brightness(1.06);
+  transform: translateY(-1px);
+}
+
+.login-social-btn:active {
+  transform: translateY(0);
+}
+
+.login-social-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.login-social-btn--google {
+  background: #fff;
+  color: #3c3c3c;
+}
+
+.login-social-btn--apple {
+  background: #fff;
+  color: #000;
+}
+
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border-soft);
+}
+
+.login-divider-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.login-email-toggle {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 10px 24px;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+  letter-spacing: 0.04em;
+}
+
+.login-email-toggle:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.login-email-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+}
+
+.login-input {
+  font-family: 'Inter', sans-serif;
+  height: 48px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 14px;
+  padding: 0 16px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.login-input::placeholder {
+  color: var(--text-faint);
+}
+
+.login-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+}
+
+.login-error {
+  font-size: 12px;
+  color: #e74c3c;
+  text-align: center;
+  padding: 8px 12px;
+  background: rgba(192, 57, 43, 0.08);
+  border: 1px solid rgba(192, 57, 43, 0.2);
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+.login-switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.login-switch-text {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+.login-switch-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-gold);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.login-switch-link:hover {
+  color: var(--accent-gold-light);
+}
+
+.login-back {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--text-faint);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-align: center;
+  letter-spacing: 0.03em;
+  transition: color 0.2s;
+}
+
+.login-back:hover {
+  color: var(--text-secondary);
+}
+
+/* Make btn-primary full-width inside the email form */
+.login-email-form .btn-primary {
+  margin-top: 2px;
+}
+
 /* ── Onboarding ── */
 .ob-root {
   position: fixed;
@@ -2177,4 +2360,804 @@ button {
 .ob-dot--active {
   background: var(--accent-gold);
   transform: scale(1.3);
+}
+
+/* ── Estate Planning Document Center ── */
+.edoc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.edoc-review-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--accent-gold-glow);
+  border: 1px solid var(--accent-gold-dark);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  font-size: 13px;
+  color: var(--accent-gold);
+}
+
+.edoc-review-banner-icon {
+  font-size: 14px;
+  line-height: 1;
+}
+
+/* Category section */
+.edoc-category {
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.edoc-category-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 18px 20px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.edoc-category-header:hover {
+  background: var(--surface-2);
+}
+
+.edoc-category-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.edoc-category-label {
+  font-family: 'Playfair Display', serif;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.edoc-category-count {
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--accent-gold-glow);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold-dark);
+  padding: 2px 8px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.edoc-category-chevron {
+  font-size: 14px;
+  color: var(--text-faint);
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+.edoc-category-body {
+  padding: 0 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 16px;
+}
+
+/* Empty guidance state */
+.edoc-empty {
+  background: var(--surface-2);
+  border: 1px dashed var(--border-soft);
+  border-radius: 10px;
+  padding: 16px 18px;
+}
+
+.edoc-empty-guidance {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  font-style: italic;
+}
+
+/* Document row */
+.edoc-row {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+
+.edoc-row--expanded {
+  border-color: var(--accent-gold-dark);
+}
+
+.edoc-row-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.edoc-row-main:hover {
+  background: rgba(212, 169, 78, 0.04);
+}
+
+.edoc-row-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.edoc-file-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.edoc-row-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.edoc-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edoc-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edoc-row-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.edoc-review-flag {
+  font-size: 13px;
+  color: var(--accent-gold);
+  line-height: 1;
+}
+
+.edoc-status {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.doc-status--current {
+  background: var(--accent-gold-glow);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold-dark);
+}
+
+.doc-status--draft {
+  background: rgba(150, 150, 150, 0.08);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-soft);
+}
+
+.doc-status--superseded {
+  background: rgba(192, 57, 43, 0.08);
+  color: #c0392b;
+  border: 1px solid rgba(192, 57, 43, 0.3);
+}
+
+.edoc-chevron {
+  font-size: 13px;
+  color: var(--text-faint);
+  font-family: monospace;
+  width: 14px;
+  text-align: center;
+}
+
+/* Expanded detail */
+.edoc-detail {
+  padding: 0 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 14px;
+}
+
+.edoc-notes {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.edoc-detail-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.edoc-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.edoc-action-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  padding: 5px 10px;
+  height: 28px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.edoc-action-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.edoc-action-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.edoc-action-btn--danger {
+  color: var(--text-faint);
+}
+
+.edoc-action-btn--danger:hover {
+  border-color: #c0392b;
+  color: #e74c3c;
+  background: rgba(192, 57, 43, 0.08);
+}
+
+.edoc-status-select {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  height: 28px;
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  padding: 0 8px;
+  cursor: pointer;
+}
+
+.edoc-status-select option {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+/* Share panel */
+/* ── Bulk sharing toolbar ── */
+.edoc-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
+
+.edoc-toolbar-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 6px 14px;
+  height: 32px;
+  cursor: pointer;
+  letter-spacing: 0.06em;
+  transition: all 0.2s;
+}
+
+.edoc-toolbar-btn:hover {
+  border-color: var(--accent-gold);
+  color: var(--accent-gold);
+}
+
+.edoc-bulk-bar {
+  background: var(--surface-1);
+  border: 1px solid var(--accent-gold-dark);
+  border-radius: 14px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.edoc-bulk-bar-info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.edoc-bulk-count {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent-gold);
+}
+
+.edoc-bulk-bar-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.edoc-bulk-share-panel {
+  margin-top: 6px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.edoc-bulk-share-heading {
+  font-size: 12px;
+  color: var(--text-faint);
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+/* ── Row checkbox & selected state ── */
+.edoc-row--selected {
+  border-color: var(--accent-gold);
+  box-shadow: 0 0 0 1px var(--accent-gold-glow);
+}
+
+.edoc-row-checkbox {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  accent-color: var(--accent-gold);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ── Share summary chip on each row ── */
+.edoc-share-summary {
+  font-size: 10px;
+  color: var(--text-faint);
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 20px;
+  padding: 3px 9px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* ── ShareSettings reusable component ── */
+.edoc-share-settings {
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.edoc-share-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edoc-share-radio {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.edoc-share-radio:hover {
+  border-color: var(--accent-gold-dark);
+}
+
+.edoc-share-radio input[type="radio"] {
+  accent-color: var(--accent-gold);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.edoc-share-radio-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.edoc-share-radio-desc {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+  line-height: 1.5;
+}
+
+.edoc-share-specific {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edoc-share-bulk-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.edoc-share-bulk-link {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  color: var(--accent-gold);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  letter-spacing: 0.04em;
+  transition: color 0.2s;
+}
+
+.edoc-share-bulk-link:hover {
+  color: var(--accent-gold-light);
+  text-decoration: underline;
+}
+
+.edoc-share-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+/* ── Shared Registry: Estate Documents section ── */
+.shared-docs-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.shared-docs-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.shared-docs-heading {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.shared-docs-count {
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--accent-gold-glow);
+  color: var(--accent-gold);
+  border: 1px solid var(--accent-gold-dark);
+  padding: 2px 9px;
+  border-radius: 20px;
+  letter-spacing: 0.04em;
+}
+
+.shared-docs-subhead {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin-bottom: 16px;
+}
+
+.shared-docs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shared-doc-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.2s;
+}
+
+.shared-doc-row:hover {
+  border-color: var(--accent-gold);
+}
+
+.shared-doc-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.shared-doc-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.shared-doc-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.shared-doc-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.shared-doc-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.shared-doc-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.shared-doc-open {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--accent-gold);
+  background: transparent;
+  border: 1px solid var(--accent-gold-dark);
+  border-radius: 6px;
+  padding: 5px 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.04em;
+}
+
+.shared-doc-open:hover {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+}
+
+.edoc-share-panel {
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 12px 14px;
+}
+
+.edoc-share-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.edoc-share-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.edoc-share-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.edoc-share-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  cursor: pointer;
+  font-size: 12px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.edoc-share-row:hover {
+  background: var(--surface-2);
+}
+
+.edoc-share-row input[type="checkbox"] {
+  accent-color: var(--accent-gold);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.edoc-share-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.edoc-share-email {
+  color: var(--text-faint);
+  font-size: 11px;
+  margin-left: auto;
+}
+
+/* Upload form */
+.edoc-upload-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--accent-gold);
+  background: transparent;
+  border: 1px dashed var(--accent-gold-dark);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.2s;
+}
+
+.edoc-upload-btn:hover {
+  background: var(--accent-gold-glow);
+  border-color: var(--accent-gold);
+  border-style: solid;
+}
+
+.edoc-upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--accent-gold-dark);
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.edoc-upload-file-row {
+  display: flex;
+}
+
+.edoc-file-btn {
+  width: 100%;
+  font-family: 'Inter', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  background: var(--surface-0);
+  border: 1px dashed var(--border-soft);
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.2s, background 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.edoc-file-btn:hover {
+  border-color: var(--accent-gold);
+  background: var(--accent-gold-glow);
+}
+
+.edoc-input,
+.edoc-select,
+.edoc-textarea {
+  font-family: 'Inter', sans-serif;
+  background: var(--surface-0);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-size: 13px;
+  padding: 11px 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.edoc-input::placeholder,
+.edoc-textarea::placeholder {
+  color: var(--text-faint);
+}
+
+.edoc-input:focus,
+.edoc-select:focus,
+.edoc-textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-gold-glow);
+}
+
+.edoc-textarea {
+  resize: vertical;
+  min-height: 60px;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.6;
+}
+
+.edoc-select option {
+  background: var(--surface-1);
+  color: var(--text-primary);
+}
+
+.edoc-row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.edoc-file-hint {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  text-align: center;
+}
+
+.edoc-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
 }

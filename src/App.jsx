@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
-import { auth, googleProvider, db } from './firebase'
-import { signInWithPopup } from 'firebase/auth'
+import { auth, db } from './firebase'
 import { collection, getDocs, query, where } from 'firebase/firestore'
 import AssetDetailPage from './pages/AssetDetailPage'
 import BottomNav from './components/BottomNav'
@@ -14,6 +13,7 @@ import Archive from './pages/Archive'
 import Reports from './pages/Reports'
 import SharedRegistry from './pages/SharedRegistry'
 import Onboarding from './pages/Onboarding'
+import LoginScreen from './pages/LoginScreen'
 import './App.css'
 
 function App() {
@@ -66,31 +66,16 @@ function App() {
     check()
   }, [user?.uid])
 
-  const handleLogin = async () => {
-    const path = location.pathname
-    if (path.startsWith('/shared/')) {
-      sessionStorage.setItem('pendingRedirect', path)
-    }
-    await signInWithPopup(auth, googleProvider)
-  }
-
   // Waiting for Firebase
   if (!authReady) return null
 
   // Not signed in
   if (!user) {
-    const isSharedPath = location.pathname.startsWith('/shared/')
     return (
-      <div className="login-screen">
-        <div className="login-ornament" />
-        <h1>Provenance</h1>
-        <div className="login-ornament" />
-        <p className="login-tagline">Track and pass down what matters.</p>
-        {isSharedPath && (
-          <p className="login-shared-hint">Sign in to view the shared registry.</p>
-        )}
-        <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
-      </div>
+      <LoginScreen
+        isSharedPath={location.pathname.startsWith('/shared/')}
+        pendingPath={location.pathname}
+      />
     )
   }
 

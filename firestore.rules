@@ -46,6 +46,24 @@ service cloud.firestore {
                     && request.resource.data.uid == request.auth.uid;
     }
 
+    // Estate planning documents
+    match /estateDocs/{docId} {
+      // Owner: full access
+      allow read, delete: if request.auth != null
+                          && resource.data.uid == request.auth.uid;
+      allow update: if request.auth != null
+                    && resource.data.uid == request.auth.uid;
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid;
+
+      // Beneficiaries: read if their email is in sharedWith,
+      // or if the doc is shared with everyone via the '__all__' token
+      allow read: if request.auth != null && (
+                    request.auth.token.email in resource.data.get('sharedWith', []) ||
+                    '__all__' in resource.data.get('sharedWith', [])
+                  );
+    }
+
     // Block everything else
     match /{document=**} {
       allow read, write: if false;
