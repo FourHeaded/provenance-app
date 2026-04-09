@@ -483,7 +483,7 @@ function AssetDetailPage() {
             {!lightbox.isHero && (
               <div className="lightbox-actions">
                 <button className="btn-ghost" onClick={() => handleMakeHero(lightbox.index)}>
-                  Make Hero
+                  Make Primary Photo
                 </button>
                 <button className="btn-ghost lightbox-action-delete" onClick={handleDeleteFromLightbox}>
                   Delete
@@ -535,7 +535,7 @@ function AssetDetailPage() {
           <div className="asset-summary-edit-fields">
             <PhotoUploadButtons
               onFileSelected={handleHeroPhotoChange}
-              label={uploading ? 'Saving...' : 'Change Hero Photo'}
+              label={uploading ? 'Saving...' : 'Change Primary Photo'}
               disabled={uploading}
             />
             <div className="asset-summary-edit-row">
@@ -895,7 +895,7 @@ function AssetDetailPage() {
                   onClick={() => setLightbox({ src: item.src, index: i, isHero: item.isHero })}
                 >
                   <img src={item.src} alt={`Photo ${i + 1}`} className="photo-grid-img" />
-                  {item.isHero && <span className="photo-grid-hero-badge">Hero</span>}
+                  {item.isHero && <span className="photo-grid-hero-badge">Primary</span>}
                 </div>
               ))}
             </div>
