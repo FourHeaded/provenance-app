@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import AssetDetailPage from './pages/AssetDetailPage'
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom'
 import { auth, googleProvider } from './firebase'
 import { signInWithPopup } from 'firebase/auth'
+import AssetDetailPage from './pages/AssetDetailPage'
 import BottomNav from './components/BottomNav'
 import Home from './pages/Home'
 import Registry from './pages/Registry'
@@ -11,16 +11,27 @@ import Documents from './pages/Documents'
 import Profile from './pages/Profile'
 import Archive from './pages/Archive'
 import Reports from './pages/Reports'
+import SharedRegistry from './pages/SharedRegistry'
 import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
+  const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged((currentUser) => {
       setUser(currentUser)
       setAuthReady(true)
+      // Post-login redirect for shared links
+      if (currentUser) {
+        const redirect = sessionStorage.getItem('postLoginRedirect')
+        if (redirect) {
+          sessionStorage.removeItem('postLoginRedirect')
+          navigate(redirect, { replace: true })
+        }
+      }
     })
     return () => unsubscribe()
   }, [])
@@ -32,16 +43,26 @@ function App() {
   if (!authReady) return null
 
   if (!user) {
+    // Save the intended path so we can redirect after login
+    const path = location.pathname
+    if (path.startsWith('/shared/')) {
+      sessionStorage.setItem('postLoginRedirect', path)
+    }
     return (
       <div className="login-screen">
         <div className="login-ornament"></div>
         <h1>Provenance</h1>
         <div className="login-ornament"></div>
         <p className="login-tagline">Track and pass down what matters.</p>
+        {path.startsWith('/shared/') && (
+          <p className="login-shared-hint">Sign in to view the shared registry.</p>
+        )}
         <button className="btn-primary" onClick={handleLogin}>Sign in with Google</button>
       </div>
     )
   }
+
+  const isSharedRoute = location.pathname.startsWith('/shared/')
 
   return (
     <div className="app-shell">
@@ -55,9 +76,10 @@ function App() {
           <Route path="/archive" element={<Archive user={user} />} />
           <Route path="/asset/:id" element={<AssetDetailPage />} />
           <Route path="/reports" element={<Reports user={user} />} />
+          <Route path="/shared/:ownerUid" element={<SharedRegistry user={user} />} />
         </Routes>
       </div>
-      <BottomNav />
+      {!isSharedRoute && <BottomNav />}
     </div>
   )
 }

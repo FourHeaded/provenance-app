@@ -3,15 +3,39 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Assets: users can only access their own documents
+    // Assets
     match /assets/{assetId} {
-      allow read, write: if request.auth != null
-                         && request.auth.uid == resource.data.uid;
+      // Any authenticated user can read (for shared registry view)
+      allow read: if request.auth != null;
+
+      // Owner has full write access
+      allow write: if request.auth != null
+                   && request.auth.uid == resource.data.uid;
       allow create: if request.auth != null
                     && request.auth.uid == request.resource.data.uid;
+
+      // Beneficiaries can express interest — allowed to update ONLY the interestedParties field
+      allow update: if request.auth != null
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['interestedParties']);
     }
 
-    // User settings: users can only access their own settings document
+    // Invites
+    match /invites/{inviteId} {
+      // Registry owner can create invites
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.registryOwnerUid;
+
+      // Owner reads/updates/deletes their own invites; invited person reads theirs
+      allow read: if request.auth != null && (
+                    request.auth.uid == resource.data.registryOwnerUid ||
+                    request.auth.token.email == resource.data.invitedEmail
+                  );
+      allow update, delete: if request.auth != null
+                            && request.auth.uid == resource.data.registryOwnerUid;
+    }
+
+    // User settings: users can only access their own document
     match /userSettings/{userId} {
       allow read, write: if request.auth != null
                          && request.auth.uid == userId;
