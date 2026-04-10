@@ -395,12 +395,23 @@ button {
 /* ── Sort Bar ── */
 .sort-bar {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 6px;
   align-items: center;
   padding-bottom: 8px;
   margin-bottom: 12px;
   border-bottom: 0.5px solid var(--border-faint);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.sort-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.sort-bar .filter-chip {
+  flex-shrink: 0;
 }
 
 /* ── Filter Bar ── */
@@ -452,6 +463,262 @@ button {
 
 .filter-clear:hover {
   color: var(--text-secondary);
+}
+
+/* ── Registry header (page-header + view toggle) ── */
+.registry-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.registry-view-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 4px;
+  flex-shrink: 0;
+}
+
+.registry-toggle-btn {
+  width: 32px;
+  height: 28px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: transparent;
+  border: none;
+  color: var(--text-faint);
+  padding: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.registry-toggle-btn:hover {
+  color: var(--text-secondary);
+}
+
+.registry-toggle-btn--active,
+.registry-toggle-btn--active:hover {
+  background: var(--surface-3);
+  color: var(--accent-gold);
+}
+
+/* ── Registry results meta line ── */
+.registry-results-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 0 20px 10px;
+}
+
+/* ── Registry list view ── */
+.asset-list-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.asset-list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 0.5px solid var(--border-faint);
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.asset-list-row:first-child {
+  border-top: 0.5px solid var(--border-faint);
+}
+
+.asset-list-row:hover {
+  background: var(--accent-gold-glow);
+}
+
+.asset-list-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface-2);
+}
+
+.asset-list-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+}
+
+.asset-list-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.asset-list-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.asset-list-cat {
+  font-size: 10px;
+  color: var(--accent-slate);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.asset-list-desc {
+  font-size: 12px;
+  color: var(--text-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.asset-list-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.asset-list-right-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.asset-list-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px;
+  color: var(--accent-gold);
+}
+
+.asset-list-cond {
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.asset-list-chev {
+  color: var(--border-soft);
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* ── Registry gallery view ── */
+.gallery-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.gallery-cat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  border-bottom: 0.5px solid var(--border-faint);
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+
+.gallery-cat-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.gallery-cat-count {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.5px;
+}
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.gallery-card {
+  background: var(--surface-1);
+  border: 0.5px solid var(--border-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.gallery-card:hover {
+  border-color: var(--accent-gold);
+}
+
+.gallery-card-photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+  background: var(--surface-2);
+}
+
+.gallery-card-info {
+  padding: 10px 12px;
+}
+
+.gallery-card-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gallery-card-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 13px;
+  color: var(--accent-gold);
+  margin-top: 2px;
+}
+
+/* ── Registry total bar ── */
+.registry-total-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 12px 20px;
+  border-top: 0.5px solid var(--border-faint);
+  margin-top: 4px;
+}
+
+.registry-total-label {
+  font-size: 11px;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.registry-total-value {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 18px;
+  color: var(--accent-gold);
 }
 
 /* ── Asset Cards ── */
