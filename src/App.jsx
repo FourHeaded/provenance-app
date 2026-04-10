@@ -26,6 +26,11 @@ function App() {
   const [onboardingChecked, setOnboardingChecked] = useState(false)
   const [showOnboarding, setShowOnboarding]   = useState(false)
   const [isPremium, setIsPremium]             = useState(false)
+  // When the user is signed-out and taps "Use email instead" on the
+  // pre-login Onboarding flow, swap to LoginScreen so they can use the
+  // standalone email form. Resets on sign-out so the Onboarding flow
+  // restarts cleanly for the next signed-out session.
+  const [showLogin, setShowLogin]             = useState(false)
   const [theme, setTheme]                     = useState(() => localStorage.getItem('prov-theme') || 'dark')
   const location = useLocation()
   const navigate = useNavigate()
@@ -44,6 +49,17 @@ function App() {
       if (!currentUser) {
         setOnboardingChecked(false)
         setShowOnboarding(false)
+        setShowLogin(false)
+      } else {
+        // Successful sign-in: this user has now seen the pre-login
+        // onboarding (either by walking through screens 1-4, or by
+        // signing in via the minimal LoginScreen). Persist the flag
+        // so future signed-out visits skip the slides.
+        try {
+          localStorage.setItem('prov-onboarding-seen', 'true')
+        } catch {
+          // localStorage may be unavailable in some sandboxed contexts
+        }
       }
       // Post-login redirect for shared links
       if (currentUser) {
@@ -78,12 +94,16 @@ function App() {
         let complete = false
 
         if (snap.empty) {
-          // New user — create initial settings doc
+          // New user — create initial settings doc. In the new flow the
+          // user has already walked through the pre-login onboarding, so
+          // mark it complete on creation to avoid showing it twice.
           await addDoc(collection(db, 'userSettings'), {
             ...profileFields,
             createdAt: new Date().toISOString(),
             isPremium: false,
+            onboardingComplete: true,
           })
+          complete = true
           setIsPremium(false)
         } else {
           const existing = snap.docs[0]
@@ -136,6 +156,16 @@ function App() {
             }
           }
 
+          // In the new flow, every signed-in user has already been
+          // through the pre-login onboarding, so any account that
+          // somehow still lacks the flag should be backfilled. This
+          // prevents the (now-vestigial) post-login Onboarding block
+          // below from ever rendering for a logged-in user.
+          if (!complete) {
+            complete = true
+            updates.onboardingComplete = true
+          }
+
           await updateDoc(doc(db, 'userSettings', existing.id), updates)
         }
 
@@ -166,10 +196,29 @@ function App() {
 
   // Not signed in
   if (!user) {
+    const isSharedPath = location.pathname.startsWith('/shared/')
+    const hasSeenOnboarding = (() => {
+      try { return !!localStorage.getItem('prov-onboarding-seen') } catch { return false }
+    })()
+
+    // Returning users (already seen the slides) and users who tapped
+    // "Use email instead" go straight to LoginScreen. Everyone else
+    // walks through the new pre-login Onboarding flow.
+    if (showLogin || hasSeenOnboarding) {
+      return (
+        <LoginScreen
+          isSharedPath={isSharedPath}
+          pendingPath={location.pathname}
+          initialMode={showLogin ? 'signin' : undefined}
+        />
+      )
+    }
+
     return (
-      <LoginScreen
-        isSharedPath={location.pathname.startsWith('/shared/')}
+      <Onboarding
+        isSharedPath={isSharedPath}
         pendingPath={location.pathname}
+        onUseEmail={() => setShowLogin(true)}
       />
     )
   }

@@ -38,8 +38,8 @@ const AppleIcon = () => (
 // 'social' | 'signin' | 'signup'
 const INITIAL_MODE = 'social'
 
-function LoginScreen({ isSharedPath, pendingPath }) {
-  const [mode, setMode]       = useState(INITIAL_MODE)
+function LoginScreen({ isSharedPath, pendingPath, initialMode }) {
+  const [mode, setMode]       = useState(initialMode || INITIAL_MODE)
   const [name, setName]       = useState('')
   const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')

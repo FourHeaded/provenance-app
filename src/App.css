@@ -2905,6 +2905,32 @@ button {
   gap: 12px;
 }
 
+/* New pre-login final screen — social buttons + email entry */
+.ob-auth-actions {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.ob-apple-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ob-coming-soon {
+  font-size: 11px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
 /* Progress dots */
 .ob-dots {
   display: flex;
