@@ -1,8 +1,17 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, Fragment } from 'react'
 import { Navigate } from 'react-router-dom'
-import { db } from '../firebase'
-import { collection, getDocs, doc, updateDoc } from 'firebase/firestore'
+import { db, storage } from '../firebase'
+import { collection, getDocs, doc, updateDoc, deleteDoc, query, where } from 'firebase/firestore'
+import { ref as storageRef, listAll, deleteObject } from 'firebase/storage'
 import { ADMIN_UID, isAdmin } from '../admin'
+
+// Recursively delete every file under a Storage prefix.
+// listAll() only returns one level, so we walk subfolders ourselves.
+async function deleteStoragePrefix(folderRef) {
+  const result = await listAll(folderRef)
+  await Promise.all(result.items.map(item => deleteObject(item).catch(() => {})))
+  await Promise.all(result.prefixes.map(prefix => deleteStoragePrefix(prefix)))
+}
 
 // __APP_VERSION__ is injected by vite.config.js at build time
 const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'
@@ -52,6 +61,9 @@ function AdminDashboard({ user }) {
   const [savingUid, setSavingUid] = useState(null)
   const [apiTest, setApiTest]   = useState(null)
   const [apiTesting, setApiTesting] = useState(false)
+  const [confirmingDeleteUid, setConfirmingDeleteUid] = useState(null)
+  const [deletingUid, setDeletingUid] = useState(null)
+  const [deleteError, setDeleteError] = useState(null) // { uid, message } | null
 
   useEffect(() => {
     // Defense in depth: never query the cross-user collections
@@ -145,6 +157,62 @@ function AdminDashboard({ user }) {
     await updateDoc(doc(db, 'userSettings', userDoc.id), { isPremium: newValue })
     setUsers(prev => prev.map(u => u.id === userDoc.id ? { ...u, isPremium: newValue } : u))
     setSavingUid(null)
+  }
+
+  // Wipe all Firestore + Storage data owned by a target user. Auth account
+  // removal requires the Admin SDK and is not possible from the browser, so
+  // the operator is told to finish the job in the Firebase Console.
+  const handleDeleteUser = async (userDoc) => {
+    const targetUid = userDoc.uid
+    if (!targetUid || deletingUid) return
+    setDeletingUid(targetUid)
+    setDeleteError(null)
+    try {
+      // 1. assets
+      const assetsSnap = await getDocs(query(
+        collection(db, 'assets'),
+        where('uid', '==', targetUid),
+      ))
+      await Promise.all(assetsSnap.docs.map(d => deleteDoc(doc(db, 'assets', d.id))))
+
+      // 2. userSettings
+      const settingsSnap = await getDocs(query(
+        collection(db, 'userSettings'),
+        where('uid', '==', targetUid),
+      ))
+      await Promise.all(settingsSnap.docs.map(d => deleteDoc(doc(db, 'userSettings', d.id))))
+
+      // 3. invites
+      const invitesSnap = await getDocs(query(
+        collection(db, 'invites'),
+        where('registryOwnerUid', '==', targetUid),
+      ))
+      await Promise.all(invitesSnap.docs.map(d => deleteDoc(doc(db, 'invites', d.id))))
+
+      // 4. estateDocs
+      const estateSnap = await getDocs(query(
+        collection(db, 'estateDocs'),
+        where('uid', '==', targetUid),
+      ))
+      await Promise.all(estateSnap.docs.map(d => deleteDoc(doc(db, 'estateDocs', d.id))))
+
+      // 5. storage files under users/{uid}/
+      await deleteStoragePrefix(storageRef(storage, `users/${targetUid}`))
+
+      // Step 6 (auth account) intentionally skipped — requires Admin SDK.
+
+      // Drop the user (and any related rows) from local state so the table
+      // immediately reflects the deletion.
+      setUsers(prev => prev.filter(u => u.uid !== targetUid))
+      setAssets(prev => prev.filter(a => a.uid !== targetUid))
+      setInvites(prev => prev.filter(i => i.registryOwnerUid !== targetUid))
+      setConfirmingDeleteUid(null)
+    } catch (err) {
+      console.error('Admin delete user failed:', err)
+      setDeleteError({ uid: targetUid, message: 'Failed to delete user data. Check console for details.' })
+    } finally {
+      setDeletingUid(null)
+    }
   }
 
   const handleTestAPI = async () => {
@@ -249,24 +317,71 @@ function AdminDashboard({ user }) {
             <div className="admin-empty">No users match this search.</div>
           ) : (
             filteredUsers.map(u => (
-              <div key={u.id} className="admin-table-row">
-                <div className="admin-col-name" title={u.displayName}>{u.displayName || '—'}</div>
-                <div className="admin-col-email" title={u.email}>{u.email || '—'}</div>
-                <div className="admin-col-uid" title={u.uid}>{shortUid(u.uid)}</div>
-                <div className="admin-col-num">{assetCountByUid[u.uid] || 0}</div>
-                <div className="admin-col-date">{formatDate(u.createdAt)}</div>
-                <div className="admin-col-date">{formatDate(u.lastLogin)}</div>
-                <div className="admin-col-plan">
-                  <button
-                    className={`admin-plan-toggle ${u.isPremium ? 'admin-plan-toggle--premium' : 'admin-plan-toggle--free'}`}
-                    onClick={() => handleTogglePremium(u)}
-                    disabled={savingUid === u.uid}
-                    title="Click to toggle premium"
-                  >
-                    {savingUid === u.uid ? '...' : (u.isPremium ? 'Premium' : 'Free')}
-                  </button>
+              <Fragment key={u.id}>
+                <div className="admin-table-row">
+                  <div className="admin-col-name" title={u.displayName}>{u.displayName || '—'}</div>
+                  <div className="admin-col-email" title={u.email}>{u.email || '—'}</div>
+                  <div className="admin-col-uid" title={u.uid}>{shortUid(u.uid)}</div>
+                  <div className="admin-col-num">{assetCountByUid[u.uid] || 0}</div>
+                  <div className="admin-col-date">{formatDate(u.createdAt)}</div>
+                  <div className="admin-col-date">{formatDate(u.lastLogin)}</div>
+                  <div className="admin-col-plan admin-col-actions">
+                    <button
+                      className={`admin-plan-toggle ${u.isPremium ? 'admin-plan-toggle--premium' : 'admin-plan-toggle--free'}`}
+                      onClick={() => handleTogglePremium(u)}
+                      disabled={savingUid === u.uid}
+                      title="Click to toggle premium"
+                    >
+                      {savingUid === u.uid ? '...' : (u.isPremium ? 'Premium' : 'Free')}
+                    </button>
+                    <button
+                      className="admin-delete-row-btn"
+                      onClick={() => {
+                        setConfirmingDeleteUid(u.uid)
+                        setDeleteError(null)
+                      }}
+                      disabled={deletingUid === u.uid || confirmingDeleteUid === u.uid}
+                      title="Delete this user"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
+                {confirmingDeleteUid === u.uid && (
+                  <div className="admin-delete-confirm">
+                    <p className="admin-delete-confirm-text">
+                      Delete <strong>{u.email || u.displayName || u.uid}</strong>? This will remove all their data permanently.
+                    </p>
+                    <p className="admin-delete-confirm-note">
+                      Firestore data deleted. To remove the Auth account, delete from Firebase Console → Authentication.
+                    </p>
+                    {deleteError?.uid === u.uid && (
+                      <p className="admin-delete-confirm-error">{deleteError.message}</p>
+                    )}
+                    <div className="admin-delete-confirm-actions">
+                      <button
+                        type="button"
+                        className="btn-ghost"
+                        onClick={() => {
+                          setConfirmingDeleteUid(null)
+                          setDeleteError(null)
+                        }}
+                        disabled={deletingUid === u.uid}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        className="btn-danger"
+                        onClick={() => handleDeleteUser(u)}
+                        disabled={deletingUid === u.uid}
+                      >
+                        {deletingUid === u.uid ? 'Deleting…' : 'Confirm'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </Fragment>
             ))
           )}
         </div>

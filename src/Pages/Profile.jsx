@@ -1,12 +1,21 @@
 import { useState, useEffect } from 'react'
-import { auth, db } from '../firebase'
-import { signOut, updateProfile } from 'firebase/auth'
+import { auth, db, storage } from '../firebase'
+import { signOut, updateProfile, deleteUser } from 'firebase/auth'
+import { ref as storageRef, listAll, deleteObject } from 'firebase/storage'
 import { useNavigate } from 'react-router-dom'
 import { isAdmin } from '../admin'
 import {
   collection, getDocs, setDoc, updateDoc, deleteDoc,
   query, where, doc, serverTimestamp
 } from 'firebase/firestore'
+
+// Recursively delete every file under a Storage prefix.
+// listAll() only returns one level, so we walk subfolders ourselves.
+async function deleteStoragePrefix(folderRef) {
+  const result = await listAll(folderRef)
+  await Promise.all(result.items.map(item => deleteObject(item).catch(() => {})))
+  await Promise.all(result.prefixes.map(prefix => deleteStoragePrefix(prefix)))
+}
 
 const RELATIONSHIPS = ['Spouse', 'Child', 'Sibling', 'Parent', 'Attorney', 'Executor', 'Friend', 'Other']
 
@@ -28,6 +37,11 @@ function Profile({ user, theme, setTheme }) {
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [savingName, setSavingName] = useState(false)
+
+  // Account deletion
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState(null)
 
   // Fallback chain: explicit setting > auth profile > email prefix
   const effectiveDisplayName =
@@ -137,6 +151,63 @@ function Profile({ user, theme, setTheme }) {
     navigator.clipboard.writeText(INVITE_URL(user.uid))
     setCopiedId(inviteId)
     setTimeout(() => setCopiedId(null), 2500)
+  }
+
+  // Permanently delete the signed-in user's account and every piece of
+  // data they own. Sequence intentionally tears down Firestore + Storage
+  // before deleting the auth account, so a mid-failure leaves the user
+  // signed-in and able to retry rather than orphaned.
+  const handleDeleteAccount = async () => {
+    if (deleting) return
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      // 1. assets
+      const assetsSnap = await getDocs(query(
+        collection(db, 'assets'),
+        where('uid', '==', user.uid),
+      ))
+      await Promise.all(assetsSnap.docs.map(d => deleteDoc(doc(db, 'assets', d.id))))
+
+      // 2. userSettings
+      const settingsSnap = await getDocs(query(
+        collection(db, 'userSettings'),
+        where('uid', '==', user.uid),
+      ))
+      await Promise.all(settingsSnap.docs.map(d => deleteDoc(doc(db, 'userSettings', d.id))))
+
+      // 3. invites
+      const invitesSnap = await getDocs(query(
+        collection(db, 'invites'),
+        where('registryOwnerUid', '==', user.uid),
+      ))
+      await Promise.all(invitesSnap.docs.map(d => deleteDoc(doc(db, 'invites', d.id))))
+
+      // 4. estateDocs
+      const estateSnap = await getDocs(query(
+        collection(db, 'estateDocs'),
+        where('uid', '==', user.uid),
+      ))
+      await Promise.all(estateSnap.docs.map(d => deleteDoc(doc(db, 'estateDocs', d.id))))
+
+      // 5. storage files under users/{uid}/
+      await deleteStoragePrefix(storageRef(storage, `users/${user.uid}`))
+
+      // 6. Firebase Auth account
+      await deleteUser(auth.currentUser)
+
+      // 7. Auth gate in App.jsx will now flip to LoginScreen on its own;
+      // navigating home is just a clean fallback.
+      navigate('/')
+    } catch (err) {
+      console.error('Account deletion failed:', err)
+      if (err.code === 'auth/requires-recent-login') {
+        setDeleteError('For security, please sign out and sign back in before deleting your account.')
+      } else {
+        setDeleteError('Something went wrong while deleting your account. Please try again.')
+      }
+      setDeleting(false)
+    }
   }
 
   const statusLabel = (status) => {
@@ -369,6 +440,50 @@ function Profile({ user, theme, setTheme }) {
         <button className="btn-ghost profile-signout" onClick={handleSignOut}>
           Sign Out
         </button>
+      </div>
+
+      {/* Delete account */}
+      <div className="profile-section">
+        {confirmingDelete ? (
+          <div className="delete-confirm-panel">
+            <p className="delete-confirm-panel-text">
+              This will permanently delete your account and all associated data.
+              This cannot be undone.
+            </p>
+            {deleteError && (
+              <p className="delete-confirm-panel-error">{deleteError}</p>
+            )}
+            <div className="delete-confirm-panel-actions">
+              <button
+                type="button"
+                className="btn-ghost"
+                onClick={() => {
+                  setConfirmingDelete(false)
+                  setDeleteError(null)
+                }}
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Delete My Account'}
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="delete-account-link"
+            onClick={() => setConfirmingDelete(true)}
+          >
+            Delete Account
+          </button>
+        )}
       </div>
     </div>
   )

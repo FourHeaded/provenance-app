@@ -1505,6 +1505,58 @@ button {
   background: rgba(192, 57, 43, 0.08);
 }
 
+/* ── Delete account (Profile) ── */
+.delete-account-link {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-faint);
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-decoration: none;
+  transition: color 0.15s ease, text-decoration 0.15s ease;
+  padding: 4px;
+}
+
+.delete-account-link:hover {
+  color: var(--color-danger, #E24B4A);
+  text-decoration: underline;
+}
+
+.delete-confirm-panel {
+  background: var(--surface-2);
+  border: 1px solid rgba(226, 75, 74, 0.3);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.delete-confirm-panel-text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.delete-confirm-panel-error {
+  font-size: 12px;
+  color: var(--color-danger, #E24B4A);
+  margin: 0 0 12px;
+  line-height: 1.5;
+}
+
+.delete-confirm-panel-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 /* ── Photo Upload / AI Identify ── */
 .photo-upload-zone {
   margin-bottom: 4px;
@@ -3913,6 +3965,82 @@ button {
 .admin-plan-toggle:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Plan column when it carries plan toggle + delete button together */
+.admin-col-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.admin-delete-row-btn {
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 20px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-faint);
+  border: 1px solid var(--border-soft);
+  transition: all 0.2s;
+}
+
+.admin-delete-row-btn:hover:not(:disabled) {
+  color: var(--color-danger, #E24B4A);
+  border-color: var(--color-danger, #E24B4A);
+  background: rgba(226, 75, 74, 0.08);
+}
+
+.admin-delete-row-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Inline confirmation panel rendered beneath a user row */
+.admin-delete-confirm {
+  background: var(--surface-2);
+  border: 1px solid rgba(226, 75, 74, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 4px 14px 10px;
+}
+
+.admin-delete-confirm-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+
+.admin-delete-confirm-text strong {
+  color: var(--text-primary);
+}
+
+.admin-delete-confirm-note {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.admin-delete-confirm-error {
+  font-size: 11px;
+  color: var(--color-danger, #E24B4A);
+  margin: 0 0 10px;
+  line-height: 1.5;
+}
+
+.admin-delete-confirm-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  align-items: center;
 }
 
 /* ── System panel ── */
