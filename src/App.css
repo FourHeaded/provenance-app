@@ -1692,6 +1692,86 @@ button {
   cursor: default;
 }
 
+/* ── Document scan flow ── */
+.doc-actions-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.doc-scan-loading {
+  font-size: 13px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin: 12px 0 0;
+}
+
+.doc-scan-preview {
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  padding: 16px;
+  margin-top: 12px;
+}
+
+.doc-scan-photo {
+  max-height: 120px;
+  object-fit: contain;
+  border-radius: 6px;
+  margin: 0 auto 12px;
+  display: block;
+  max-width: 100%;
+}
+
+.doc-scan-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.doc-scan-amount-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.doc-scan-amount-prefix {
+  color: var(--text-faint);
+  font-size: 14px;
+}
+
+.doc-scan-amount-input {
+  flex: 1;
+}
+
+.doc-scan-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.doc-scan-badge {
+  display: inline-block;
+  font-size: 10px;
+  color: var(--accent-slate);
+  background: var(--accent-slate-glow);
+  border-radius: 10px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+.doc-scan-meta {
+  display: block;
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
 .vault-empty {
   background: var(--surface-1);
   border: 1px dashed var(--border-soft);

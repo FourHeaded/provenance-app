@@ -9,6 +9,17 @@ import PhotoUploadButtons from '../components/PhotoUploadButtons'
 // ── Constants for the new field groups ──
 const CONDITION_OPTIONS    = ['Excellent', 'Good', 'Fair', 'Poor', 'Unknown']
 const ACQUISITION_OPTIONS  = ['Purchased', 'Inherited', 'Gifted', 'Commissioned', 'Other']
+const DOC_TYPE_OPTIONS     = ['Receipt', 'Appraisal', 'Insurance', 'Invoice', 'Certificate', 'Warranty', 'Other']
+
+// Initial form for the camera-scanned document confirmation panel
+const EMPTY_SCAN_FORM = {
+  title: '',
+  documentType: 'Other',
+  vendor: '',
+  date: '',
+  amount: '',
+  notes: '',
+}
 
 function formatLongDate(iso) {
   if (!iso) return ''
@@ -136,6 +147,17 @@ function AssetDetailPage() {
   })
 
   const docInputRef = useRef(null)
+  const docScanInputRef = useRef(null)
+
+  // Camera-scan document flow:
+  // 'idle'    → buttons visible, no scan in progress
+  // 'reading' → photo captured, AI extraction in flight
+  // 'review'  → confirmation panel showing editable fields
+  const [docScanState, setDocScanState] = useState('idle')
+  const [scanFile, setScanFile]         = useState(null)
+  const [scanPreview, setScanPreview]   = useState(null)
+  const [scanForm, setScanForm]         = useState(EMPTY_SCAN_FORM)
+  const [savingScan, setSavingScan]     = useState(false)
 
   const [form, setForm] = useState({
     name: asset?.name || '',
@@ -327,12 +349,22 @@ function AssetDetailPage() {
   const handleAdditionalPhoto = async (file) => {
     if (!file) return
     setAddingPhoto(true)
-    const storagePath = `${photoBase}/${Date.now()}-${file.name}`
-    const url = await uploadToStorage(storagePath, file)
-    const newItem = { url, storagePath }
-    const updated = [...(asset.additionalImages || []), newItem]
-    await updateDoc(doc(db, 'assets', assetId), { additionalImages: updated })
-    setAsset({ ...asset, additionalImages: updated })
+    // If no primary photo exists yet, promote this upload to the hero
+    // slot rather than dropping it into the gallery.
+    const hasPrimary = !!(asset.imageUrl || asset.imageBase64)
+    if (!hasPrimary) {
+      const storagePath = `${photoBase}/hero`
+      const url = await uploadToStorage(storagePath, file)
+      await updateDoc(doc(db, 'assets', assetId), { imageUrl: url, imageBase64: null })
+      setAsset({ ...asset, imageUrl: url, imageBase64: null })
+    } else {
+      const storagePath = `${photoBase}/${Date.now()}-${file.name}`
+      const url = await uploadToStorage(storagePath, file)
+      const newItem = { url, storagePath }
+      const updated = [...(asset.additionalImages || []), newItem]
+      await updateDoc(doc(db, 'assets', assetId), { additionalImages: updated })
+      setAsset({ ...asset, additionalImages: updated })
+    }
     setAddingPhoto(false)
   }
 
@@ -415,6 +447,120 @@ function AssetDetailPage() {
     const updated = (asset.documents || []).filter((_, i) => i !== index)
     await updateDoc(doc(db, 'assets', assetId), { documents: updated })
     setAsset({ ...asset, documents: updated })
+  }
+
+  // ── Camera-scan a document (receipt, appraisal, etc.) ──
+  // Capture a photo, run it through Claude for metadata extraction,
+  // then surface a small confirmation panel for the user to review/edit
+  // before the file is uploaded and the doc is appended.
+  const handleScanFileSelected = (file) => {
+    if (!file) return
+    setScanFile(file)
+    setDocScanState('reading')
+
+    const reader = new FileReader()
+    reader.onloadend = async () => {
+      const dataUrl = reader.result
+      setScanPreview(dataUrl)
+      const base64Data = dataUrl.split(',')[1]
+
+      let extracted = { ...EMPTY_SCAN_FORM }
+      try {
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': import.meta.env.VITE_ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-dangerous-direct-browser-access': 'true',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 500,
+            messages: [{
+              role: 'user',
+              content: [
+                {
+                  type: 'image',
+                  source: { type: 'base64', media_type: 'image/jpeg', data: base64Data },
+                },
+                {
+                  type: 'text',
+                  text: `This is a photo of a document (receipt, appraisal, insurance card, invoice, or similar). Extract the following fields if visible and return ONLY a JSON object with these exact keys:
+          - documentType: string (one of: Receipt, Appraisal, Insurance, Invoice, Certificate, Warranty, Other)
+          - title: string (brief descriptive title, e.g. "Appraisal — Christie's 2023" or "Purchase Receipt — Sotheby's")
+          - vendor: string (business or institution name if visible, otherwise empty string)
+          - date: string (ISO format YYYY-MM-DD if a date is visible, otherwise empty string)
+          - amount: number (dollar amount if visible, no $ sign, otherwise null)
+          - notes: string (any other relevant detail in one sentence, otherwise empty string)
+          Return ONLY valid JSON. No preamble, no explanation, no markdown fences.`,
+                },
+              ],
+            }],
+          }),
+        })
+        const data = await response.json()
+        const text = data.content?.[0]?.text?.trim() ?? ''
+        // Models occasionally wrap JSON in fences despite the prompt
+        const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim()
+        const parsed = JSON.parse(cleaned)
+        const docType = DOC_TYPE_OPTIONS.includes(parsed.documentType) ? parsed.documentType : 'Other'
+        extracted = {
+          title:        parsed.title  || '',
+          documentType: docType,
+          vendor:       parsed.vendor || '',
+          date:         parsed.date   || '',
+          amount:       parsed.amount == null ? '' : String(parsed.amount),
+          notes:        parsed.notes  || '',
+        }
+      } catch (err) {
+        // Per spec: silent fall-through to empty fields
+        console.error('Document scan extraction failed:', err)
+      }
+
+      setScanForm(extracted)
+      setDocScanState('review')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleCancelScan = () => {
+    if (savingScan) return
+    setScanFile(null)
+    setScanPreview(null)
+    setScanForm(EMPTY_SCAN_FORM)
+    setDocScanState('idle')
+  }
+
+  const handleSaveScannedDoc = async () => {
+    if (!scanFile || savingScan) return
+    setSavingScan(true)
+    const timestamp = Date.now()
+    const storagePath = `${docBase}/${timestamp}.jpg`
+    const url = await uploadToStorage(storagePath, scanFile)
+
+    const newDoc = {
+      name:              scanForm.title.trim(),
+      type:              scanForm.documentType,
+      url,
+      storagePath,
+      uploadedAt:        new Date().toISOString(),
+      vendor:            scanForm.vendor,
+      date:              scanForm.date,
+      amount:            scanForm.amount === '' ? null : parseFloat(scanForm.amount),
+      notes:             scanForm.notes,
+      scannedFromCamera: true,
+    }
+
+    const updated = [...(asset.documents || []), newDoc]
+    await updateDoc(doc(db, 'assets', assetId), { documents: updated })
+    setAsset({ ...asset, documents: updated })
+
+    setScanFile(null)
+    setScanPreview(null)
+    setScanForm(EMPTY_SCAN_FORM)
+    setSavingScan(false)
+    setDocScanState('idle')
   }
 
   const formatDate = (iso) => {
@@ -942,9 +1088,22 @@ function AssetDetailPage() {
         <div className="detail-fields">
           <div className="vault-subsection-header">
             <span className="vault-subsection-label">Attached Documents</span>
-            <button className="vault-add-btn" onClick={() => docInputRef.current.click()} disabled={addingDoc}>
-              {addingDoc ? 'Uploading...' : '+ Attach Document'}
-            </button>
+            <div className="doc-actions-row">
+              <button
+                className="vault-add-btn"
+                onClick={() => docInputRef.current.click()}
+                disabled={addingDoc || docScanState !== 'idle'}
+              >
+                {addingDoc ? 'Uploading...' : '+ Attach Document'}
+              </button>
+              <button
+                className="vault-add-btn"
+                onClick={() => docScanInputRef.current?.click()}
+                disabled={addingDoc || docScanState !== 'idle'}
+              >
+                Scan with Camera
+              </button>
+            </div>
             <input
               ref={docInputRef}
               type="file"
@@ -952,7 +1111,99 @@ function AssetDetailPage() {
               onChange={handleAddDoc}
               style={{ display: 'none' }}
             />
+            <input
+              ref={docScanInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={(e) => {
+                const f = e.target.files?.[0]
+                e.target.value = ''
+                if (f) handleScanFileSelected(f)
+              }}
+              style={{ display: 'none' }}
+            />
           </div>
+
+          {docScanState === 'reading' && (
+            <p className="doc-scan-loading">Reading document…</p>
+          )}
+
+          {docScanState === 'review' && (
+            <div className="doc-scan-preview">
+              {scanPreview && (
+                <img className="doc-scan-photo" src={scanPreview} alt="Scanned document" />
+              )}
+              <div className="doc-scan-fields">
+                <input
+                  type="text"
+                  className="detail-field-input"
+                  placeholder="Document title"
+                  value={scanForm.title}
+                  onChange={e => setScanForm(s => ({ ...s, title: e.target.value }))}
+                  disabled={savingScan}
+                />
+                <div className="pill-row">
+                  {DOC_TYPE_OPTIONS.map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      className={`pill ${scanForm.documentType === opt ? 'pill--active' : ''}`}
+                      onClick={() => setScanForm(s => ({ ...s, documentType: opt }))}
+                      disabled={savingScan}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="date"
+                  className="detail-field-input"
+                  value={scanForm.date}
+                  onChange={e => setScanForm(s => ({ ...s, date: e.target.value }))}
+                  disabled={savingScan}
+                />
+                <div className="doc-scan-amount-wrap">
+                  <span className="doc-scan-amount-prefix">$</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="detail-field-input doc-scan-amount-input"
+                    placeholder="Amount"
+                    value={scanForm.amount}
+                    onChange={e => setScanForm(s => ({ ...s, amount: e.target.value }))}
+                    disabled={savingScan}
+                  />
+                </div>
+                <textarea
+                  className="detail-field-input"
+                  rows={2}
+                  placeholder="Notes"
+                  value={scanForm.notes}
+                  onChange={e => setScanForm(s => ({ ...s, notes: e.target.value }))}
+                  disabled={savingScan}
+                />
+                <div className="doc-scan-actions">
+                  <button
+                    type="button"
+                    className="btn-ghost"
+                    onClick={handleCancelScan}
+                    disabled={savingScan}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-primary"
+                    onClick={handleSaveScannedDoc}
+                    disabled={savingScan || !scanForm.title.trim()}
+                  >
+                    {savingScan ? 'Saving…' : 'Save Document'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {(asset.documents || []).length === 0 ? (
             <div className="vault-empty">
@@ -960,19 +1211,35 @@ function AssetDetailPage() {
             </div>
           ) : (
             <div className="doc-list">
-              {asset.documents.map((document, i) => (
-                <div key={i} className="doc-row">
-                  <button className="doc-row-main" onClick={() => openDocument(document)} title="Open document">
-                    <span className="doc-icon">{docIcon(document.type)}</span>
-                    <div className="doc-info">
-                      <span className="doc-name">{document.name}</span>
-                      <span className="doc-date">{formatDate(document.uploadedAt)}</span>
-                    </div>
-                    <span className="doc-open">↗</span>
-                  </button>
-                  <button className="doc-delete-btn" onClick={() => handleDeleteDoc(i)} title="Delete document">✕</button>
-                </div>
-              ))}
+              {asset.documents.map((document, i) => {
+                const scanMetaParts = [
+                  document.amount != null && document.amount !== ''
+                    ? formatMoney(document.amount)
+                    : null,
+                  document.date ? formatLongDate(document.date) : null,
+                ].filter(Boolean)
+                return (
+                  <div key={i} className="doc-row">
+                    <button className="doc-row-main" onClick={() => openDocument(document)} title="Open document">
+                      <span className="doc-icon">{docIcon(document.type)}</span>
+                      <div className="doc-info">
+                        <span className="doc-name">
+                          {document.name}
+                          {document.scannedFromCamera && (
+                            <span className="doc-scan-badge">Scanned</span>
+                          )}
+                        </span>
+                        <span className="doc-date">{formatDate(document.uploadedAt)}</span>
+                        {document.scannedFromCamera && scanMetaParts.length > 0 && (
+                          <span className="doc-scan-meta">{scanMetaParts.join(' · ')}</span>
+                        )}
+                      </div>
+                      <span className="doc-open">↗</span>
+                    </button>
+                    <button className="doc-delete-btn" onClick={() => handleDeleteDoc(i)} title="Delete document">✕</button>
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
