@@ -2525,11 +2525,92 @@ button {
   border: 1px solid var(--border-soft);
   border-radius: 16px;
   padding: 20px;
-  transition: border-color 0.2s;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.15s;
 }
 
 .shared-asset-card:hover {
   border-color: var(--accent-gold);
+  background: var(--surface-2);
+}
+
+/* Class name is `shared-expanded-photo` rather than `shared-asset-photo`
+   (which the spec named) because the latter is already taken by the
+   72×72 collapsed thumbnail. Same intent: a full-width hero photo. */
+.shared-expanded-photo {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  cursor: zoom-in;
+  border: 1px solid var(--border-soft);
+}
+
+.shared-asset-expanded {
+  padding-top: 16px;
+  border-top: 0.5px solid var(--border-faint, var(--border-soft));
+  margin-top: 12px;
+}
+
+.shared-prov-section {
+  margin-bottom: 16px;
+}
+
+.shared-prov-block + .shared-prov-block {
+  margin-top: 14px;
+}
+
+.shared-prov-label {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--accent-gold);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.shared-prov-content {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.shared-detail-row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.shared-detail-label {
+  color: var(--text-faint);
+  min-width: 80px;
+}
+
+.shared-view-details {
+  font-size: 12px;
+  color: var(--accent-slate);
+  margin-left: auto;
+  display: block;
+  text-align: right;
+  margin-top: 8px;
+}
+
+.shared-asset-close {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  color: var(--accent-slate);
+  margin-top: 16px;
+  cursor: pointer;
+}
+
+.shared-asset-close:hover {
+  text-decoration: underline;
 }
 
 .shared-asset-top {

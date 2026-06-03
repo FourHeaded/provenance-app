@@ -78,7 +78,10 @@ const forceSignOut = async () => {
   } catch (e) {
     console.error('Force signout error:', e)
   } finally {
-    window.location.reload()
+    // Navigate to the same URL cleanly instead of hard reload — lets
+    // React re-mount against a fresh auth state without a flash of
+    // black between document teardown and rebuild.
+    window.location.href = window.location.href
   }
 }
 
@@ -94,6 +97,12 @@ function SharedRegistry({ user }) {
   const [ownerName, setOwnerName] = useState('')
   const [lightbox, setLightbox] = useState(null)
   const [expressingInterest, setExpressingInterest] = useState(null)
+  // Only one asset can be expanded at a time — tapping another collapses
+  // the previously-open card.
+  const [expandedAssetId, setExpandedAssetId] = useState(null)
+  // Shown while forceSignOut clears caches and re-navigates — avoids a
+  // black flash between teardown and the new render.
+  const [signingOut, setSigningOut] = useState(false)
 
   // Auth-gate state for unauthenticated beneficiaries
   const [showEmailForm, setShowEmailForm] = useState(false)
@@ -282,9 +291,10 @@ function SharedRegistry({ user }) {
           setDenyReason('revoked')
           setHasAccess(false)
           setLoading(false)
+          setSigningOut(true)
           // forceSignOut clears Firebase IndexedDB persistence in addition
-          // to localStorage/sessionStorage, then reloads. The deny copy
-          // will render against a fully clean auth state.
+          // to localStorage/sessionStorage, then re-navigates. The deny
+          // copy will render against a fully clean auth state.
           await forceSignOut()
           return
         }
@@ -313,6 +323,7 @@ function SharedRegistry({ user }) {
             if (!snap.exists() || snap.data()?.status === 'revoked') {
               setHasAccess(false)
               setDenyReason('revoked')
+              setSigningOut(true)
               await forceSignOut()
               return
             }
@@ -497,6 +508,25 @@ function SharedRegistry({ user }) {
     } finally {
       setExpressingInterest(null)
     }
+  }
+
+  // Bridge UI between detecting a revoked invite and the URL re-navigate.
+  // Wins over every other render branch so we never flash an empty page.
+  if (signingOut) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        background: 'var(--surface-0)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        flexDirection: 'column',
+        gap: '16px',
+      }}>
+        <Logo variant="icon" size={48} />
+        <p style={{ color: 'var(--text-faint)', fontSize: '14px' }}>Signing out...</p>
+      </div>
+    )
   }
 
   // ── Unauthenticated: render an inline sign-in gate ──
@@ -693,14 +723,40 @@ function SharedRegistry({ user }) {
           {assets.map(asset => {
             const heroSrc = asset.imageUrl || asset.imageBase64
             const interested = hasExpressedInterest(asset)
+            const isExpanded = expandedAssetId === asset.id
+            const notes = asset.notes || {}
+            const PROV_LABELS = { origin: 'Origin', history: 'History', meaning: 'Meaning', legacy: 'Legacy' }
+            const provEntries = ['origin', 'history', 'meaning', 'legacy']
+              .map(key => [key, (notes[key] || '').trim()])
+              .filter(([, val]) => val.length > 0)
+            const details   = asset.details || {}
+            const ownership = asset.ownership || {}
+            const hasDetails   = details.condition   || details.location
+            const hasOwnership = ownership.acquisitionType || ownership.acquiredFrom
+
+            const toggleExpanded = () =>
+              setExpandedAssetId(prev => (prev === asset.id ? null : asset.id))
+
             return (
-              <div key={asset.id} className="shared-asset-card">
+              <div
+                key={asset.id}
+                className={`shared-asset-card ${isExpanded ? 'shared-asset-card--expanded' : ''}`}
+                onClick={toggleExpanded}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    toggleExpanded()
+                  }
+                }}
+              >
                 <div className="shared-asset-top">
                   <img
                     className="shared-asset-photo"
                     src={heroSrc || DEFAULT_IMAGE}
                     alt={asset.name}
-                    onClick={() => heroSrc && setLightbox(heroSrc)}
+                    onClick={e => { if (heroSrc) { e.stopPropagation(); setLightbox(heroSrc) } }}
                     style={{ cursor: heroSrc ? 'zoom-in' : 'default' }}
                   />
                   <div className="shared-asset-info">
@@ -724,17 +780,81 @@ function SharedRegistry({ user }) {
                           className="shared-photo-strip-img"
                           src={src}
                           alt=""
-                          onClick={() => setLightbox(src)}
+                          onClick={e => { e.stopPropagation(); setLightbox(src) }}
                         />
                       )
                     })}
                   </div>
                 )}
 
+                {!isExpanded && (
+                  <span className="shared-view-details">View details →</span>
+                )}
+
+                {isExpanded && (
+                  <div className="shared-asset-expanded">
+                    {heroSrc && (
+                      <img
+                        className="shared-expanded-photo"
+                        src={heroSrc}
+                        alt={asset.name}
+                        onClick={e => { e.stopPropagation(); setLightbox(heroSrc) }}
+                      />
+                    )}
+
+                    {provEntries.length > 0 && (
+                      <div className="shared-prov-section">
+                        {provEntries.map(([key, val]) => (
+                          <div key={key} className="shared-prov-block">
+                            <span className="shared-prov-label">{PROV_LABELS[key]}</span>
+                            <p className="shared-prov-content">{val}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {hasDetails && (
+                      <div className="shared-prov-section">
+                        <span className="shared-prov-label">Details</span>
+                        {details.condition && (
+                          <div className="shared-detail-row">
+                            <span className="shared-detail-label">Condition</span>
+                            <span>{details.condition}</span>
+                          </div>
+                        )}
+                        {details.location && (
+                          <div className="shared-detail-row">
+                            <span className="shared-detail-label">Location</span>
+                            <span>{details.location}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {hasOwnership && (
+                      <div className="shared-prov-section">
+                        <span className="shared-prov-label">Ownership</span>
+                        {ownership.acquisitionType && (
+                          <div className="shared-detail-row">
+                            <span className="shared-detail-label">Acquired</span>
+                            <span>{ownership.acquisitionType}</span>
+                          </div>
+                        )}
+                        {ownership.acquiredFrom && (
+                          <div className="shared-detail-row">
+                            <span className="shared-detail-label">From</span>
+                            <span>{ownership.acquiredFrom}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="shared-asset-footer">
                   <button
                     className={`shared-interest-btn ${interested ? 'shared-interest-btn--done' : ''}`}
-                    onClick={() => handleExpressInterest(asset)}
+                    onClick={e => { e.stopPropagation(); handleExpressInterest(asset) }}
                     disabled={interested || expressingInterest === asset.id}
                   >
                     {expressingInterest === asset.id
@@ -744,6 +864,24 @@ function SharedRegistry({ user }) {
                         : 'Express Interest'}
                   </button>
                 </div>
+
+                {isExpanded && (
+                  <span
+                    className="shared-asset-close"
+                    onClick={e => { e.stopPropagation(); setExpandedAssetId(null) }}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setExpandedAssetId(null)
+                      }
+                    }}
+                  >
+                    Close
+                  </span>
+                )}
               </div>
             )
           })}
