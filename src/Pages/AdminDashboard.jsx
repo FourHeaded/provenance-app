@@ -76,7 +76,17 @@ function AdminDashboard({ user }) {
           getDocs(collection(db, 'assets')),
           getDocs(collection(db, 'invites')),
         ])
-        setUsers(usersSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+        // Defensive dedupe: legacy/duplicate userSettings docs occasionally
+        // ended up with the same uid. Keep the first occurrence per uid.
+        const seen = new Set()
+        const uniqueUsers = usersSnap.docs
+          .map(d => ({ id: d.id, ...d.data() }))
+          .filter(u => {
+            if (!u.uid || seen.has(u.uid)) return false
+            seen.add(u.uid)
+            return true
+          })
+        setUsers(uniqueUsers)
         setAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
         setInvites(invitesSnap.docs.map(d => ({ id: d.id, ...d.data() })))
       } catch (e) {
@@ -195,6 +205,34 @@ function AdminDashboard({ user }) {
         where('uid', '==', targetUid),
       ))
       await Promise.all(estateSnap.docs.map(d => deleteDoc(doc(db, 'estateDocs', d.id))))
+
+      // 4a. invites where the target user was the BENEFICIARY (incoming).
+      // userDoc.email is stored lowercased by App.jsx, matching invitedEmail.
+      const deletedUserEmail = (userDoc.email || '').toLowerCase()
+      if (deletedUserEmail) {
+        try {
+          const beneficiaryInvitesSnap = await getDocs(query(
+            collection(db, 'invites'),
+            where('invitedEmail', '==', deletedUserEmail),
+          ))
+          await Promise.all(beneficiaryInvitesSnap.docs.map(d => deleteDoc(d.ref)))
+        } catch (err) {
+          console.error('Beneficiary invite cleanup failed:', err)
+        }
+      }
+
+      // 4b. notifications where the target user was the ACTOR.
+      if (userDoc.email) {
+        try {
+          const notificationsSnap = await getDocs(query(
+            collection(db, 'notifications'),
+            where('fromEmail', '==', userDoc.email),
+          ))
+          await Promise.all(notificationsSnap.docs.map(d => deleteDoc(d.ref)))
+        } catch (err) {
+          console.error('Actor-notification cleanup failed:', err)
+        }
+      }
 
       // 5. storage files under users/{uid}/
       await deleteStoragePrefix(storageRef(storage, `users/${targetUid}`))

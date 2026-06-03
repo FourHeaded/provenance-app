@@ -141,6 +141,7 @@ function AssetDetailPage() {
       insurance:   false,
       provenance:  hasNotes,
       beneficiary: false,
+      interest:    false,
       photos:      false,
       documents:   false,
     }
@@ -1039,6 +1040,45 @@ function AssetDetailPage() {
           )}
         </div>
       </SectionAccordion>
+
+      {/* ── Interest Expressed (read-only) ── */}
+      {asset.interestedParties?.length > 0 && (
+        <SectionAccordion
+          label="Interest Expressed"
+          summary={
+            <span>
+              {asset.interestedParties.length}{' '}
+              {asset.interestedParties.length === 1 ? 'person' : 'people'}
+            </span>
+          }
+          expanded={openSections.interest}
+          editable={false}
+          editing={editing}
+          onToggle={() => toggleSection('interest')}
+        >
+          <div className="detail-fields">
+            {asset.interestedParties.map((entry, i) => {
+              const isObj = typeof entry === 'object' && entry !== null
+              const name  = isObj ? (entry.name || entry.email) : entry
+              const note  = isObj ? entry.note : null
+              const date  = isObj && entry.expressedAt
+                ? new Date(entry.expressedAt).toLocaleDateString('en-US', {
+                    month: 'short', day: 'numeric', year: 'numeric',
+                  })
+                : null
+              return (
+                <div key={i} className="interest-row">
+                  <div className="interest-row-info">
+                    <span className="interest-row-name">{name}</span>
+                    {note && <span className="interest-row-note">"{note}"</span>}
+                    {date && <span className="interest-row-date">{date}</span>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </SectionAccordion>
+      )}
 
       {/* ── Photos ── */}
       <SectionAccordion

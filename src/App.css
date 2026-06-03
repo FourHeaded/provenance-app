@@ -2256,6 +2256,73 @@ button {
   border: 1px solid rgba(192, 57, 43, 0.3);
 }
 
+.invite-status--revoked {
+  background: rgba(192, 57, 43, 0.1);
+  color: #c0392b;
+  border: 1px solid rgba(192, 57, 43, 0.3);
+}
+
+.invite-delete-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-danger, #E24B4A);
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 4px 8px;
+  text-decoration: none;
+  transition: text-decoration 0.15s, opacity 0.15s;
+}
+
+.invite-delete-link:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.invite-delete-link:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ── Interest Expressed (AssetDetailPage read-only section) ── */
+.interest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-faint, var(--border-soft));
+}
+
+.interest-row:last-child {
+  border-bottom: none;
+}
+
+.interest-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.interest-row-name {
+  font-size: 14px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.interest-row-note {
+  font-size: 13px;
+  color: var(--text-faint);
+  font-style: italic;
+  display: block;
+  margin-top: 3px;
+}
+
+.interest-row-date {
+  font-size: 11px;
+  color: var(--text-faint);
+  display: block;
+  margin-top: 2px;
+}
+
 .invite-action-btn {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
@@ -2281,6 +2348,131 @@ button {
   border-color: #c0392b;
   color: #e74c3c;
   background: rgba(192, 57, 43, 0.08);
+}
+
+/* ── Expandable beneficiary row ── */
+.invite-row-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.invite-row--clickable {
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.invite-row--clickable:hover {
+  border-color: var(--accent-gold-dark);
+}
+
+.invite-chevron {
+  font-size: 22px;
+  line-height: 1;
+  color: var(--text-faint);
+  transition: transform 0.2s ease, color 0.2s;
+  display: inline-block;
+}
+
+.invite-row--clickable:hover .invite-chevron {
+  color: var(--accent-gold);
+}
+
+.invite-chevron--open {
+  transform: rotate(90deg);
+}
+
+.invite-expanded {
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-top: none;
+  border-radius: 0 0 10px 10px;
+  margin-top: -1px;
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.invite-expanded-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.invite-expanded-accepted-date {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+}
+
+.invite-expanded-section-label {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.invite-interested-empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin: 0;
+}
+
+.invite-interested-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.invite-interested-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, transform 0.15s;
+  width: 100%;
+}
+
+.invite-interested-row:hover {
+  border-color: var(--accent-gold-dark);
+  transform: translateY(-1px);
+}
+
+.invite-interested-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.invite-interested-name {
+  font-size: 13px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.invite-interested-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 2px;
+}
+
+.invite-interested-note {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.invite-interested-arrow {
+  font-size: 14px;
+  color: var(--accent-gold);
+  flex-shrink: 0;
 }
 
 /* ── Shared Registry ── */
@@ -2476,6 +2668,68 @@ button {
   font-size: 14px;
   color: var(--text-secondary);
   line-height: 1.7;
+}
+
+/* ── Shared registry: inline sign-in gate ── */
+.shared-auth-gate {
+  min-height: 100vh;
+  background: var(--surface-0);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 20px;
+}
+
+.shared-auth-gate-inner {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  text-align: center;
+}
+
+.shared-auth-gate-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 28px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 0.5px;
+  margin: 8px 0 0;
+}
+
+.shared-auth-gate-subtext {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.shared-auth-gate-actions {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.shared-auth-gate-form {
+  width: 100%;
+  align-items: stretch;
+}
+
+.shared-auth-gate-error {
+  font-size: 13px;
+  color: #e74c3c;
+  margin: 0;
+}
+
+.shared-auth-gate-note {
+  font-size: 12px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin-top: 8px;
 }
 
 .login-shared-hint {

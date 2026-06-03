@@ -26,6 +26,8 @@ function Profile({ user, theme, setTheme }) {
   const [userSettings, setUserSettings] = useState(null)
   const [invites, setInvites] = useState([])
   const [loadingInvites, setLoadingInvites] = useState(true)
+  const [allAssets, setAllAssets] = useState([])
+  const [expandedInvites, setExpandedInvites] = useState({}) // inviteId -> bool
   const isPremium = userSettings?.isPremium || false
   const [showInviteForm, setShowInviteForm] = useState(false)
   const [inviteForm, setInviteForm] = useState({ name: '', email: '', relationship: '' })
@@ -53,11 +55,13 @@ function Profile({ user, theme, setTheme }) {
 
   useEffect(() => {
     const load = async () => {
-      const [invitesSnap, settingsSnap] = await Promise.all([
+      const [invitesSnap, settingsSnap, assetsSnap] = await Promise.all([
         getDocs(query(collection(db, 'invites'), where('registryOwnerUid', '==', user.uid))),
         getDocs(query(collection(db, 'userSettings'), where('uid', '==', user.uid))),
+        getDocs(query(collection(db, 'assets'), where('uid', '==', user.uid))),
       ])
       setInvites(invitesSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+      setAllAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
       if (!settingsSnap.empty) {
         const docSnap = settingsSnap.docs[0]
         setUserSettings({ id: docSnap.id, ...docSnap.data() })
@@ -66,6 +70,44 @@ function Profile({ user, theme, setTheme }) {
     }
     load()
   }, [])
+
+  const toggleExpanded = (inviteId) => {
+    setExpandedInvites(prev => ({ ...prev, [inviteId]: !prev[inviteId] }))
+  }
+
+  // Find every active asset where this beneficiary's email shows up in
+  // interestedParties. Tolerates the legacy bare-string entry shape.
+  const interestedAssetsFor = (beneficiaryEmail) => {
+    const target = (beneficiaryEmail || '').toLowerCase()
+    if (!target) return []
+    return allAssets
+      .filter(a => a.itemStatus !== 'archived')
+      .filter(asset =>
+        (asset.interestedParties || []).some(entry =>
+          typeof entry === 'string'
+            ? entry.toLowerCase() === target
+            : (entry?.email || '').toLowerCase() === target
+        )
+      )
+  }
+
+  const findInterestEntry = (asset, beneficiaryEmail) => {
+    const target = (beneficiaryEmail || '').toLowerCase()
+    return (asset.interestedParties || []).find(entry =>
+      typeof entry === 'string'
+        ? entry.toLowerCase() === target
+        : (entry?.email || '').toLowerCase() === target
+    )
+  }
+
+  const formatAcceptedAt = (ts) => {
+    if (!ts) return ''
+    const d = typeof ts.toDate === 'function' ? ts.toDate()
+            : typeof ts.seconds === 'number' ? new Date(ts.seconds * 1000)
+            : new Date(ts)
+    if (isNaN(d.getTime())) return ''
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  }
 
   const handleStartEditName = () => {
     setNameInput(effectiveDisplayName)
@@ -145,9 +187,11 @@ function Profile({ user, theme, setTheme }) {
               <p style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9A7030; margin-bottom: 32px;">Estate Asset Registry</p>
               <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">Hi ${inviteForm.name},</p>
               <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">${user.displayName || 'Someone'} has invited you to view their estate asset registry on Provenance. As a beneficiary, you can browse their cataloged items, view estate documents they've chosen to share, and express interest in items that are meaningful to you.</p>
-              <div style="margin: 32px 0;">
-                <a href="https://provenance-510ad.web.app/shared/${user.uid}" style="background: #9A7030; color: #F2EFE8; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-size: 14px; letter-spacing: 1px;">View Registry</a>
+              <p style="font-size: 16px; line-height: 1.7; margin-bottom: 16px;">Click below to accept the invitation and view their registry.</p>
+              <div style="margin: 24px 0 12px 0;">
+                <a href="https://provenance-510ad.web.app/shared/${user.uid}" style="background: #9A7030; color: #F2EFE8; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-size: 14px; letter-spacing: 1px;">Accept Invitation</a>
               </div>
+              <p style="font-size: 12px; color: #A09890; line-height: 1.6; margin-bottom: 24px;">You'll need a free Provenance account to view the registry. Creating one takes less than a minute.</p>
               <p style="font-size: 13px; color: #5A5650; line-height: 1.7;">Provenance helps families catalog what matters, preserve the stories behind it, and make sure the people they love know what they have — and what it means.</p>
               <hr style="border: none; border-top: 0.5px solid #D5D0C8; margin: 32px 0;" />
               <p style="font-size: 12px; color: #A09890;">You received this email because ${user.displayName || 'someone'} invited you to their Provenance registry. If you have questions, reply to this email.</p>
@@ -171,9 +215,125 @@ function Profile({ user, theme, setTheme }) {
 
   const handleRevokeInvite = async (inviteId) => {
     setRevokingId(inviteId)
-    await deleteDoc(doc(db, 'invites', inviteId))
-    setInvites(prev => prev.filter(i => i.id !== inviteId))
-    setRevokingId(null)
+    try {
+      // Mark the invite as revoked rather than deleting it — keeps a
+      // historical record on the owner's side and lets SharedRegistry's
+      // onSnapshot kick the beneficiary out in real time.
+      await updateDoc(doc(db, 'invites', inviteId), {
+        status: 'revoked',
+        revokedAt: serverTimestamp(),
+      })
+
+      // Strip this beneficiary's entries from every asset's
+      // interestedParties array so a revoked party doesn't keep showing
+      // up in the owner's "interested in" lists. Best-effort: a failure
+      // here shouldn't undo the revoke itself.
+      const revokedInvite = invites.find(i => i.id === inviteId)
+      const targetEmail = (revokedInvite?.invitedEmail || '').toLowerCase()
+      if (targetEmail) {
+        try {
+          const assetsSnap = await getDocs(query(
+            collection(db, 'assets'),
+            where('uid', '==', user.uid),
+          ))
+          await Promise.all(assetsSnap.docs.map(async (assetDoc) => {
+            const asset = assetDoc.data()
+            if (!asset.interestedParties?.length) return
+            const filtered = asset.interestedParties.filter(entry =>
+              typeof entry === 'string'
+                ? entry.toLowerCase() !== targetEmail
+                : (entry?.email || '').toLowerCase() !== targetEmail
+            )
+            if (filtered.length !== asset.interestedParties.length) {
+              await updateDoc(assetDoc.ref, { interestedParties: filtered })
+            }
+          }))
+          // Mirror the cleanup in local allAssets so the expanded
+          // panel updates without a reload.
+          setAllAssets(prev => prev.map(a => {
+            if (!a.interestedParties?.length) return a
+            const filtered = a.interestedParties.filter(entry =>
+              typeof entry === 'string'
+                ? entry.toLowerCase() !== targetEmail
+                : (entry?.email || '').toLowerCase() !== targetEmail
+            )
+            return filtered.length === a.interestedParties.length
+              ? a
+              : { ...a, interestedParties: filtered }
+          }))
+        } catch (err) {
+          console.error('Interest cleanup on revoke failed:', err)
+        }
+      }
+
+      setInvites(prev => prev.map(i => i.id === inviteId
+        ? { ...i, status: 'revoked' }
+        : i
+      ))
+    } catch (err) {
+      console.error('Revoke failed:', err)
+    } finally {
+      setRevokingId(null)
+    }
+  }
+
+  const handleReinstateInvite = async (invite) => {
+    setRevokingId(invite.id)
+    try {
+      const inviteRef = doc(db, 'invites', invite.id)
+      await updateDoc(inviteRef, {
+        status: 'accepted',
+        revokedAt: null,
+        reinstatedAt: serverTimestamp(),
+      })
+
+      // Best-effort notification email — failures don't undo the reinstate.
+      try {
+        await addDoc(collection(db, 'mail'), {
+          to: invite.invitedEmail,
+          message: {
+            subject: `Your access to ${user.displayName || 'a'} Provenance registry has been restored`,
+            html: `
+              <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #1C1A17;">
+                <h1 style="font-size: 32px; font-weight: 400; margin-bottom: 8px;">Provenance</h1>
+                <p style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9A7030; margin-bottom: 32px;">Estate Asset Registry</p>
+                <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">Hi ${invite.invitedName},</p>
+                <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">${user.displayName || 'Someone'} has restored your access to their Provenance registry.</p>
+                <div style="margin: 32px 0;">
+                  <a href="https://provenance-510ad.web.app/shared/${user.uid}" style="background: #9A7030; color: #F2EFE8; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-size: 14px; letter-spacing: 1px;">View Registry</a>
+                </div>
+                <hr style="border: none; border-top: 0.5px solid #D5D0C8; margin: 32px 0;" />
+                <p style="font-size: 12px; color: #A09890;">You received this because your registry access was restored by the owner.</p>
+              </div>
+            `,
+          },
+        })
+      } catch (err) {
+        console.error('Reinstate email queue failed:', err)
+      }
+
+      setInvites(prev => prev.map(i => i.id === invite.id
+        ? { ...i, status: 'accepted', revokedAt: null }
+        : i
+      ))
+    } catch (err) {
+      console.error('Reinstate failed:', err)
+    } finally {
+      setRevokingId(null)
+    }
+  }
+
+  const handleDeleteInvite = async (invite) => {
+    if (!window.confirm(`Remove ${invite.invitedName} from your beneficiaries permanently?`)) return
+    setRevokingId(invite.id)
+    try {
+      await deleteDoc(doc(db, 'invites', invite.id))
+      setInvites(prev => prev.filter(i => i.id !== invite.id))
+    } catch (err) {
+      console.error('Delete invite failed:', err)
+    } finally {
+      setRevokingId(null)
+    }
   }
 
   const handleCopyLink = (inviteId) => {
@@ -219,6 +379,36 @@ function Profile({ user, theme, setTheme }) {
       ))
       await Promise.all(estateSnap.docs.map(d => deleteDoc(doc(db, 'estateDocs', d.id))))
 
+      // 4a. invites where THIS user was the beneficiary (incoming),
+      // so they don't linger after the account is gone.
+      const deletedUserEmail = (user.email || '').toLowerCase()
+      if (deletedUserEmail) {
+        try {
+          const beneficiaryInvitesSnap = await getDocs(query(
+            collection(db, 'invites'),
+            where('invitedEmail', '==', deletedUserEmail),
+          ))
+          await Promise.all(beneficiaryInvitesSnap.docs.map(d => deleteDoc(d.ref)))
+        } catch (err) {
+          console.error('Beneficiary invite cleanup failed:', err)
+        }
+      }
+
+      // 4b. notifications where THIS user was the actor. Self-delete may
+      // hit permission-denied (rules let only the recipient/admin touch
+      // these); best-effort, swallow so it doesn't block account removal.
+      if (user.email) {
+        try {
+          const notificationsSnap = await getDocs(query(
+            collection(db, 'notifications'),
+            where('fromEmail', '==', user.email),
+          ))
+          await Promise.all(notificationsSnap.docs.map(d => deleteDoc(d.ref)))
+        } catch (err) {
+          console.error('Actor-notification cleanup failed:', err)
+        }
+      }
+
       // 5. storage files under users/{uid}/
       await deleteStoragePrefix(storageRef(storage, `users/${user.uid}`))
 
@@ -242,6 +432,7 @@ function Profile({ user, theme, setTheme }) {
   const statusLabel = (status) => {
     if (status === 'accepted') return 'Accepted'
     if (status === 'declined') return 'Declined'
+    if (status === 'revoked')  return 'Revoked'
     return 'Pending'
   }
 
@@ -382,37 +573,120 @@ function Profile({ user, theme, setTheme }) {
           <p className="invite-empty">No beneficiaries invited yet. Share your registry with family, attorneys, or executors.</p>
         ) : (
           <div className="invite-list">
-            {invites.map(invite => (
-              <div key={invite.id} className="invite-row">
-                <div className="invite-row-info">
-                  <div className="invite-row-name">{invite.invitedName}</div>
-                  <div className="invite-row-meta">
-                    <span className="invite-relationship">{invite.relationship}</span>
-                    <span className="invite-email">{invite.invitedEmail}</span>
+            {invites.map(invite => {
+              const isOpen = !!expandedInvites[invite.id]
+              const interestedAssets = isOpen ? interestedAssetsFor(invite.invitedEmail) : []
+              return (
+                <div key={invite.id} className="invite-row-wrap">
+                  <div
+                    className="invite-row invite-row--clickable"
+                    onClick={() => toggleExpanded(invite.id)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        toggleExpanded(invite.id)
+                      }
+                    }}
+                  >
+                    <div className="invite-row-info">
+                      <div className="invite-row-name">{invite.invitedName}</div>
+                      <div className="invite-row-meta">
+                        <span className="invite-relationship">{invite.relationship}</span>
+                        <span className="invite-email">{invite.invitedEmail}</span>
+                      </div>
+                    </div>
+                    <div className="invite-row-actions">
+                      <span className={`invite-status invite-status--${invite.status}`}>
+                        {statusLabel(invite.status)}
+                      </span>
+                      <button
+                        className="invite-action-btn"
+                        onClick={e => { e.stopPropagation(); handleCopyLink(invite.id) }}
+                        title="Copy invite link"
+                      >
+                        {copiedId === invite.id ? '✓ Copied' : 'Copy link'}
+                      </button>
+                      {invite.status === 'revoked' ? (
+                        <>
+                          <button
+                            className="btn-ghost btn-small"
+                            onClick={e => { e.stopPropagation(); handleReinstateInvite(invite) }}
+                            disabled={revokingId === invite.id}
+                            title="Restore access"
+                          >
+                            {revokingId === invite.id ? '...' : 'Reinstate'}
+                          </button>
+                          <button
+                            className="invite-delete-link"
+                            onClick={e => { e.stopPropagation(); handleDeleteInvite(invite) }}
+                            disabled={revokingId === invite.id}
+                            title="Delete permanently"
+                          >
+                            Delete
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="invite-action-btn invite-action-btn--danger"
+                          onClick={e => { e.stopPropagation(); handleRevokeInvite(invite.id) }}
+                          disabled={revokingId === invite.id}
+                          title="Revoke access"
+                        >
+                          {revokingId === invite.id ? '...' : 'Revoke'}
+                        </button>
+                      )}
+                      <span className={`invite-chevron ${isOpen ? 'invite-chevron--open' : ''}`} aria-hidden="true">›</span>
+                    </div>
                   </div>
+
+                  {isOpen && (
+                    <div className="invite-expanded">
+                      <div className="invite-expanded-status-row">
+                        <span className={`invite-status invite-status--${invite.status}`}>
+                          {statusLabel(invite.status)}
+                        </span>
+                        {invite.status === 'accepted' && invite.acceptedAt && (
+                          <span className="invite-expanded-accepted-date">
+                            on {formatAcceptedAt(invite.acceptedAt)}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="invite-expanded-section-label">Expressed Interest In</div>
+                      {interestedAssets.length === 0 ? (
+                        <p className="invite-interested-empty">No items yet</p>
+                      ) : (
+                        <div className="invite-interested-list">
+                          {interestedAssets.map(asset => {
+                            const entry = findInterestEntry(asset, invite.invitedEmail)
+                            const note = typeof entry === 'object' ? entry?.note : ''
+                            return (
+                              <button
+                                key={asset.id}
+                                type="button"
+                                className="invite-interested-row"
+                                onClick={e => { e.stopPropagation(); navigate(`/asset/${asset.id}`) }}
+                              >
+                                <div className="invite-interested-text">
+                                  <div className="invite-interested-name">{asset.name}</div>
+                                  <div className="invite-interested-meta">{asset.category}</div>
+                                  {note && (
+                                    <div className="invite-interested-note">"{note}"</div>
+                                  )}
+                                </div>
+                                <span className="invite-interested-arrow">→</span>
+                              </button>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-                <div className="invite-row-actions">
-                  <span className={`invite-status invite-status--${invite.status}`}>
-                    {statusLabel(invite.status)}
-                  </span>
-                  <button
-                    className="invite-action-btn"
-                    onClick={() => handleCopyLink(invite.id)}
-                    title="Copy invite link"
-                  >
-                    {copiedId === invite.id ? '✓ Copied' : 'Copy link'}
-                  </button>
-                  <button
-                    className="invite-action-btn invite-action-btn--danger"
-                    onClick={() => handleRevokeInvite(invite.id)}
-                    disabled={revokingId === invite.id}
-                    title="Revoke access"
-                  >
-                    {revokingId === invite.id ? '...' : 'Revoke'}
-                  </button>
-                </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>

@@ -18,7 +18,8 @@ service cloud.firestore {
     function hasValidInvite(ownerUid) {
       let inviteId = ownerUid + '_' + request.auth.token.email;
       return exists(/databases/$(database)/documents/invites/$(inviteId)) &&
-        get(/databases/$(database)/documents/invites/$(inviteId)).data.status != 'declined';
+        get(/databases/$(database)/documents/invites/$(inviteId)).data.status != 'declined' &&
+        get(/databases/$(database)/documents/invites/$(inviteId)).data.status != 'revoked';
     }
 
     // Assets
@@ -31,7 +32,9 @@ service cloud.firestore {
                   && (request.auth.uid == resource.data.uid
                       || hasValidInvite(resource.data.uid));
 
-      // Owner has full write access
+      // Owner has full write access — this covers field updates of any
+      // kind, including array rewrites like the interestedParties
+      // cleanup that runs when a beneficiary is revoked.
       allow write: if (request.auth != null
                        && request.auth.uid == resource.data.uid)
                    || isAdmin();
@@ -98,21 +101,21 @@ service cloud.firestore {
     }
 
     // Mail queue for the Firebase Trigger Email extension. Any signed-in
-    // user can enqueue a message; reads/updates/deletes are blocked so
+    // user can enqueue a message; reads/updates/deletes are admin-only so
     // queued mail can't be inspected or tampered with from the client.
     match /mail/{document} {
       allow create: if request.auth != null;
-      allow read, update, delete: if false;
+      allow read, update, delete: if isAdmin();
     }
 
     // In-app notifications for the Home "Recent Activity" feed. Anyone
     // signed-in can write (e.g. a beneficiary expressing interest); only
-    // the owning user can read or mark them read. Delete is disabled.
+    // the owning user can read or mark them read. Admin can delete.
     match /notifications/{notificationId} {
       allow create: if request.auth != null;
       allow read, update: if request.auth != null
                           && resource.data.ownerUid == request.auth.uid;
-      allow delete: if false;
+      allow delete: if isAdmin();
     }
 
     // Block everything else

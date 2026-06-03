@@ -184,12 +184,19 @@ function App() {
   // Waiting for Firebase
   if (!authReady) return null
 
-  // Public legal pages — accessible whether or not the user is signed in
-  if (location.pathname === '/terms' || location.pathname === '/privacy') {
+  // Public routes — accessible whether or not the user is signed in.
+  // SharedRegistry runs its own auth gate internally, so beneficiaries
+  // can land on the link without bouncing through the main onboarding.
+  if (
+    location.pathname === '/terms' ||
+    location.pathname === '/privacy' ||
+    location.pathname.startsWith('/shared/')
+  ) {
     return (
       <Routes>
-        <Route path="/terms"   element={<Terms />} />
-        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms"            element={<Terms />} />
+        <Route path="/privacy"          element={<Privacy />} />
+        <Route path="/shared/:ownerUid" element={<SharedRegistry user={user} />} />
       </Routes>
     )
   }
@@ -231,9 +238,7 @@ function App() {
     return <Onboarding user={user} onComplete={() => setShowOnboarding(false)} />
   }
 
-  // Normal app
-  const isSharedRoute = location.pathname.startsWith('/shared/')
-
+  // Normal app — /shared/:ownerUid is handled by the public block above.
   return (
     <div className="app-shell">
       <div className="page-content">
@@ -246,11 +251,10 @@ function App() {
           <Route path="/archive"             element={<Archive user={user} />} />
           <Route path="/asset/:id"           element={<AssetDetailPage />} />
           <Route path="/reports"             element={<Reports user={user} isPremium={isPremium} />} />
-          <Route path="/shared/:ownerUid"    element={<SharedRegistry user={user} />} />
           <Route path="/admin"               element={<AdminDashboard user={user} />} />
         </Routes>
       </div>
-      {!isSharedRoute && <BottomNav user={user} />}
+      <BottomNav user={user} />
     </div>
   )
 }
