@@ -1,4 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { db } from '../firebase'
+import { collection, query, where, onSnapshot } from 'firebase/firestore'
 import './BottomNav.css'
 
 const NAV_ITEMS = [
@@ -59,21 +62,43 @@ const NAV_ITEMS = [
   }
 ]
 
-function BottomNav() {
+function BottomNav({ user }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const [hasUnread, setHasUnread] = useState(false)
+
+  // Live-watch unread notifications so the Home-tab dot updates the
+  // moment the user marks one as read on the Home page.
+  useEffect(() => {
+    if (!user?.uid) return
+    const q = query(
+      collection(db, 'notifications'),
+      where('ownerUid', '==', user.uid),
+      where('read', '==', false),
+    )
+    const unsub = onSnapshot(
+      q,
+      snap => setHasUnread(!snap.empty),
+      err => console.error('BottomNav notifications subscribe failed:', err),
+    )
+    return () => unsub()
+  }, [user?.uid])
 
   return (
     <nav className="bottom-nav">
       {NAV_ITEMS.map(item => {
         const isActive = location.pathname === item.path
+        const showDot = item.id === 'home' && hasUnread
         return (
           <button
             key={item.id}
             className={`nav-item ${item.isFab ? 'nav-fab' : ''} ${isActive ? 'active' : ''}`}
             onClick={() => navigate(item.path)}
           >
-            <span className="nav-icon">{item.icon}</span>
+            <span className="nav-icon">
+              {item.icon}
+              {showDot && <span className="nav-icon-dot" aria-hidden="true" />}
+            </span>
             {!item.isFab && <span className="nav-label">{item.label}</span>}
           </button>
         )

@@ -250,7 +250,7 @@ function App() {
           <Route path="/admin"               element={<AdminDashboard user={user} />} />
         </Routes>
       </div>
-      {!isSharedRoute && <BottomNav />}
+      {!isSharedRoute && <BottomNav user={user} />}
     </div>
   )
 }

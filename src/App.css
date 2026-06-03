@@ -5331,6 +5331,113 @@ select.detail-field-input option {
   flex-shrink: 0;
 }
 
+/* ── Header actions (bell + avatar) ── */
+.home-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.home-bell-btn {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.home-bell-btn:hover {
+  border-color: var(--accent-gold-dark);
+  color: var(--accent-gold);
+}
+
+.home-bell-dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  border: 2px solid var(--surface-0);
+}
+
+/* ── Recent Activity ── */
+.home-activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.home-activity-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  background: var(--surface-1);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.home-activity-row:hover {
+  border-color: var(--accent-gold-dark);
+  transform: translateY(-1px);
+}
+
+.home-activity-row--unread {
+  background: linear-gradient(90deg, var(--accent-gold-glow) 0%, var(--surface-1) 60%);
+  border-color: rgba(201, 169, 110, 0.3);
+}
+
+.home-activity-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-gold);
+  flex-shrink: 0;
+}
+
+.home-activity-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.home-activity-label {
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.4;
+}
+
+.home-activity-label strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.home-activity-time {
+  font-size: 11px;
+  color: var(--text-faint);
+  font-style: italic;
+  margin-top: 3px;
+}
+
+.home-activity-arrow {
+  font-size: 16px;
+  color: var(--accent-gold);
+  flex-shrink: 0;
+}
+
 /* ── Your Estate (large pillar grid) ── */
 .home-pillar-grid--large .home-pillar-card {
   display: flex;

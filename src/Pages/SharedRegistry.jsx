@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { db } from '../firebase'
-import { collection, getDocs, getDoc, query, where, doc, updateDoc } from 'firebase/firestore'
+import {
+  collection, getDocs, getDoc, addDoc,
+  query, where, doc, updateDoc,
+  arrayUnion, serverTimestamp,
+} from 'firebase/firestore'
 
 const ESTATE_CATEGORY_LABELS = {
   'will':           'Will & Testament',
@@ -46,14 +50,63 @@ function SharedRegistry({ user }) {
         // Format must match what Profile.jsx writes: `{ownerUid}_{lowercased email}`
         const userEmail = user.email.toLowerCase()
         const inviteId = `${ownerUid}_${userEmail}`
-        const inviteSnap = await getDoc(doc(db, 'invites', inviteId))
+        const inviteRef = doc(db, 'invites', inviteId)
+        const inviteSnap = await getDoc(inviteRef)
 
         if (!inviteSnap.exists() || inviteSnap.data().status === 'declined') {
           setLoading(false)
           return
         }
         setHasAccess(true)
-        setOwnerName(inviteSnap.data().ownerName || '')
+        const inviteData = inviteSnap.data()
+        setOwnerName(inviteData.ownerName || '')
+
+        // First successful view of a pending invite = acceptance. Flip the
+        // status, then notify the owner via email + in-app notification.
+        // Best-effort: failures here must not block registry access.
+        if (inviteData.status === 'pending') {
+          try {
+            await updateDoc(inviteRef, {
+              status: 'accepted',
+              acceptedAt: serverTimestamp(),
+            })
+            const ownerSettingsQuery = query(
+              collection(db, 'userSettings'),
+              where('uid', '==', ownerUid),
+            )
+            const ownerSnap = await getDocs(ownerSettingsQuery)
+            if (!ownerSnap.empty) {
+              const ownerData = ownerSnap.docs[0].data()
+              if (ownerData.email) {
+                await addDoc(collection(db, 'mail'), {
+                  to: ownerData.email,
+                  message: {
+                    subject: `${inviteData.invitedName || user.email} accepted your Provenance invite`,
+                    html: `
+                      <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #1C1A17;">
+                        <h1 style="font-size: 32px; font-weight: 400; margin-bottom: 8px;">Provenance</h1>
+                        <p style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9A7030; margin-bottom: 32px;">Estate Asset Registry</p>
+                        <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;"><strong>${inviteData.invitedName || user.email}</strong> has accepted your invitation and can now view your Provenance registry.</p>
+                        <hr style="border: none; border-top: 0.5px solid #D5D0C8; margin: 32px 0;" />
+                        <p style="font-size: 12px; color: #A09890;">You received this because you invited someone to your Provenance registry.</p>
+                      </div>
+                    `,
+                  },
+                })
+              }
+            }
+            await addDoc(collection(db, 'notifications'), {
+              ownerUid,
+              type: 'invite_accepted',
+              fromName: inviteData.invitedName || user.displayName || user.email,
+              fromEmail: user.email,
+              read: false,
+              createdAt: serverTimestamp(),
+            })
+          } catch (err) {
+            console.error('Invite-accepted notification failed:', err)
+          }
+        }
       }
 
       // Load owner's active assets
@@ -109,16 +162,78 @@ function SharedRegistry({ user }) {
   }, [ownerUid, user.email])
 
   const handleExpressInterest = async (asset) => {
+    if (!user) return
     if (interestedMap[asset.id]) return
     setExpressingInterest(asset.id)
-    const updated = [
-      ...(asset.interestedParties || []),
-      { email: user.email, name: user.displayName, expressedAt: new Date().toISOString() },
-    ]
-    await updateDoc(doc(db, 'assets', asset.id), { interestedParties: updated })
-    setAssets(prev => prev.map(a => a.id === asset.id ? { ...a, interestedParties: updated } : a))
-    setInterestedMap(prev => ({ ...prev, [asset.id]: true }))
-    setExpressingInterest(null)
+    try {
+      const assetRef = doc(db, 'assets', asset.id)
+      const newEntry = {
+        uid: user.uid,
+        name: user.displayName || user.email,
+        email: user.email,
+        expressedAt: new Date().toISOString(),
+      }
+      await updateDoc(assetRef, {
+        interestedParties: arrayUnion(newEntry),
+      })
+
+      // Look up the owner so we can both email them and write an
+      // in-app notification.
+      const ownerSettingsQuery = query(
+        collection(db, 'userSettings'),
+        where('uid', '==', ownerUid),
+      )
+      const ownerSnap = await getDocs(ownerSettingsQuery)
+      if (!ownerSnap.empty) {
+        const ownerData = ownerSnap.docs[0].data()
+        const ownerEmail = ownerData.email
+        const ownerName  = ownerData.displayName || ownerEmail
+        if (ownerEmail) {
+          await addDoc(collection(db, 'mail'), {
+            to: ownerEmail,
+            message: {
+              subject: `${user.displayName || user.email} expressed interest in ${asset.name}`,
+              html: `
+                <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #1C1A17;">
+                  <h1 style="font-size: 32px; font-weight: 400; margin-bottom: 8px;">Provenance</h1>
+                  <p style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9A7030; margin-bottom: 32px;">Estate Asset Registry</p>
+                  <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">Hi ${ownerName},</p>
+                  <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;"><strong>${user.displayName || user.email}</strong> has expressed interest in <strong>${asset.name}</strong> from your Provenance registry.</p>
+                  <div style="background: #F2EFE8; border-left: 3px solid #9A7030; padding: 16px 20px; margin: 24px 0; border-radius: 4px;">
+                    <p style="font-size: 14px; color: #5A5650; margin: 0;">${asset.category} · Est. value: $${Number(asset.value || 0).toLocaleString()}</p>
+                  </div>
+                  <hr style="border: none; border-top: 0.5px solid #D5D0C8; margin: 32px 0;" />
+                  <p style="font-size: 12px; color: #A09890;">You received this because someone viewed your Provenance registry.</p>
+                </div>
+              `,
+            },
+          })
+        }
+      }
+
+      // In-app notification for the Home "Recent Activity" feed.
+      await addDoc(collection(db, 'notifications'), {
+        ownerUid,
+        type: 'interest_expressed',
+        assetId: asset.id,
+        assetName: asset.name,
+        fromName: user.displayName || user.email,
+        fromEmail: user.email,
+        read: false,
+        createdAt: serverTimestamp(),
+      })
+
+      // Update local state to reflect expressed interest
+      setAssets(prev => prev.map(a => a.id === asset.id
+        ? { ...a, interestedParties: [...(a.interestedParties || []), newEntry] }
+        : a
+      ))
+      setInterestedMap(prev => ({ ...prev, [asset.id]: true }))
+    } catch (err) {
+      console.error('Express Interest error:', err)
+    } finally {
+      setExpressingInterest(null)
+    }
   }
 
   if (loading) {

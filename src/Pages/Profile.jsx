@@ -5,7 +5,7 @@ import { ref as storageRef, listAll, deleteObject } from 'firebase/storage'
 import { useNavigate } from 'react-router-dom'
 import { isAdmin } from '../admin'
 import {
-  collection, getDocs, setDoc, updateDoc, deleteDoc,
+  collection, getDocs, setDoc, addDoc, updateDoc, deleteDoc,
   query, where, doc, serverTimestamp
 } from 'firebase/firestore'
 
@@ -130,6 +130,35 @@ function Profile({ user, theme, setTheme }) {
     // Format: `{registryOwnerUid}_{lowercased invitedEmail}`
     const inviteId = `${user.uid}_${invitedEmail}`
     await setDoc(doc(db, 'invites', inviteId), newInvite)
+
+    // Best-effort beneficiary invite email via the Firebase Trigger Email
+    // extension (listens to the `mail` collection). Failures are swallowed so
+    // a mail-write hiccup never blocks the invite itself.
+    try {
+      await addDoc(collection(db, 'mail'), {
+        to: invitedEmail,
+        message: {
+          subject: `${user.displayName || 'Someone'} has shared their Provenance registry with you`,
+          html: `
+            <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; color: #1C1A17;">
+              <h1 style="font-size: 32px; font-weight: 400; margin-bottom: 8px;">Provenance</h1>
+              <p style="font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #9A7030; margin-bottom: 32px;">Estate Asset Registry</p>
+              <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">Hi ${inviteForm.name},</p>
+              <p style="font-size: 16px; line-height: 1.7; margin-bottom: 24px;">${user.displayName || 'Someone'} has invited you to view their estate asset registry on Provenance. As a beneficiary, you can browse their cataloged items, view estate documents they've chosen to share, and express interest in items that are meaningful to you.</p>
+              <div style="margin: 32px 0;">
+                <a href="https://provenance-510ad.web.app/shared/${user.uid}" style="background: #9A7030; color: #F2EFE8; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-size: 14px; letter-spacing: 1px;">View Registry</a>
+              </div>
+              <p style="font-size: 13px; color: #5A5650; line-height: 1.7;">Provenance helps families catalog what matters, preserve the stories behind it, and make sure the people they love know what they have — and what it means.</p>
+              <hr style="border: none; border-top: 0.5px solid #D5D0C8; margin: 32px 0;" />
+              <p style="font-size: 12px; color: #A09890;">You received this email because ${user.displayName || 'someone'} invited you to their Provenance registry. If you have questions, reply to this email.</p>
+            </div>
+          `,
+        },
+      })
+    } catch (err) {
+      console.error('Invite email queue failed:', err)
+    }
+
     const saved = { id: inviteId, ...newInvite, createdAt: new Date() }
     // Re-inviting the same email overwrites the existing invite, so dedupe by ID
     setInvites(prev => [saved, ...prev.filter(i => i.id !== inviteId)])

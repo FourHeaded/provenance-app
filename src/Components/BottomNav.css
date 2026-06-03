@@ -38,11 +38,23 @@
   }
   
   .nav-icon {
+    position: relative;
     width: 22px;
     height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .nav-icon-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #D4A94E;
+    border: 2px solid #111108;
   }
   
   .nav-icon svg {

@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { db } from '../firebase'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import {
+  collection, getDocs, query, where,
+  doc, updateDoc,
+} from 'firebase/firestore'
 
 // ── Constants ──────────────────────────────────────────────────────
 const REQUIRED_DOC_CATEGORIES = ['will', 'poa-financial', 'poa-healthcare', 'living-will']
@@ -50,6 +53,26 @@ function formatShortDate(iso) {
 
 function formatDayDate() {
   return new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+}
+
+// Convert a Firestore Timestamp / Date / ISO string into a Date.
+function toDate(ts) {
+  if (!ts) return null
+  if (typeof ts.toDate === 'function') return ts.toDate()
+  if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000)
+  const d = new Date(ts)
+  return isNaN(d.getTime()) ? null : d
+}
+
+function timeAgo(ts) {
+  const d = toDate(ts)
+  if (!d) return ''
+  const diff = Math.max(0, (Date.now() - d.getTime()) / 1000)
+  if (diff < 60)     return 'just now'
+  if (diff < 3600)   return `${Math.floor(diff / 60)}m ago`
+  if (diff < 86400)  return `${Math.floor(diff / 3600)}h ago`
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
 function computeReadinessScore({ activeAssets, estateDocsByCategory, docsNeedingReview, activeBeneficiaries }) {
@@ -120,20 +143,36 @@ function Home({ user }) {
   const [userSettings, setUserSettings]   = useState(null)
   const [invites, setInvites]             = useState([])
   const [estateDocs, setEstateDocs]       = useState([])
+  const [notifications, setNotifications] = useState([])
+
+  const activityRef = useRef(null)
 
   useEffect(() => {
     const load = async () => {
       try {
-        const [assetsSnap, settingsSnap, invitesSnap, estateDocsSnap] = await Promise.all([
+        const [assetsSnap, settingsSnap, invitesSnap, estateDocsSnap, notificationsSnap] = await Promise.all([
           getDocs(query(collection(db, 'assets'),       where('uid', '==', user.uid))),
           getDocs(query(collection(db, 'userSettings'), where('uid', '==', user.uid))),
           getDocs(query(collection(db, 'invites'),      where('registryOwnerUid', '==', user.uid))),
           getDocs(query(collection(db, 'estateDocs'),   where('uid', '==', user.uid))),
+          // Skip orderBy/limit here so we don't need a composite index.
+          // We sort + slice client-side below; volume is bounded in practice.
+          getDocs(query(
+            collection(db, 'notifications'),
+            where('ownerUid', '==', user.uid),
+          )),
         ])
         setAssets(assetsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
         setUserSettings(settingsSnap.empty ? null : settingsSnap.docs[0].data())
         setInvites(invitesSnap.docs.map(d => ({ id: d.id, ...d.data() })))
         setEstateDocs(estateDocsSnap.docs.map(d => ({ id: d.id, ...d.data() })))
+        const allNotifs = notificationsSnap.docs.map(d => ({ id: d.id, ...d.data() }))
+        allNotifs.sort((a, b) => {
+          const aT = toDate(a.createdAt)?.getTime() || 0
+          const bT = toDate(b.createdAt)?.getTime() || 0
+          return bT - aT
+        })
+        setNotifications(allNotifs.slice(0, 5))
       } catch (e) {
         console.error('Home load failed:', e)
       } finally {
@@ -142,6 +181,28 @@ function Home({ user }) {
     }
     load()
   }, [user.uid])
+
+  const hasUnread = notifications.some(n => !n.read)
+
+  const handleNotificationTap = async (n) => {
+    if (!n.read) {
+      try {
+        await updateDoc(doc(db, 'notifications', n.id), { read: true })
+      } catch (err) {
+        console.error('Mark notification read failed:', err)
+      }
+      setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x))
+    }
+    if (n.type === 'interest_expressed' && n.assetId) {
+      navigate(`/asset/${n.assetId}`)
+    } else if (n.type === 'invite_accepted') {
+      navigate('/profile')
+    }
+  }
+
+  const scrollToActivity = () => {
+    activityRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   if (loading) {
     return <div className="page"><p className="placeholder-text">Loading...</p></div>
@@ -205,13 +266,27 @@ function Home({ user }) {
           <h1 className="home-greeting">{greeting}</h1>
           <p className="home-meta">Your estate plan · {today}</p>
         </div>
-        <button className="home-avatar-btn" onClick={() => navigate('/profile')} aria-label="Profile">
-          {user.photoURL ? (
-            <img className="home-avatar" src={user.photoURL} alt={user.displayName} referrerPolicy="no-referrer" />
-          ) : (
-            <div className="home-avatar home-avatar--initials">{initial}</div>
-          )}
-        </button>
+        <div className="home-header-actions">
+          <button
+            type="button"
+            className="home-bell-btn"
+            onClick={scrollToActivity}
+            aria-label="Recent activity"
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10.3 21a1.94 1.94 0 003.4 0" />
+            </svg>
+            {hasUnread && <span className="home-bell-dot" aria-hidden="true" />}
+          </button>
+          <button className="home-avatar-btn" onClick={() => navigate('/profile')} aria-label="Profile">
+            {user.photoURL ? (
+              <img className="home-avatar" src={user.photoURL} alt={user.displayName} referrerPolicy="no-referrer" />
+            ) : (
+              <div className="home-avatar home-avatar--initials">{initial}</div>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* ── Estate Readiness ── */}
@@ -292,6 +367,35 @@ function Home({ user }) {
           </button>
         ))}
       </div>
+
+      {/* ── Recent Activity ── */}
+      {notifications.length > 0 && (
+        <>
+          <h2 ref={activityRef} className="section-label">Recent Activity</h2>
+          <div className="home-activity-list">
+            {notifications.map(n => {
+              const label = n.type === 'interest_expressed'
+                ? <><strong>{n.fromName}</strong> expressed interest in <strong>{n.assetName}</strong></>
+                : <><strong>{n.fromName}</strong> accepted your invitation</>
+              return (
+                <button
+                  key={n.id}
+                  type="button"
+                  className={`home-activity-row ${n.read ? '' : 'home-activity-row--unread'}`}
+                  onClick={() => handleNotificationTap(n)}
+                >
+                  {!n.read && <span className="home-activity-dot" aria-hidden="true" />}
+                  <div className="home-activity-text">
+                    <div className="home-activity-label">{label}</div>
+                    <div className="home-activity-time">{timeAgo(n.createdAt)}</div>
+                  </div>
+                  <span className="home-activity-arrow">→</span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
 
       {/* ── Your Estate ── */}
       <h2 className="section-label">Your Estate</h2>
